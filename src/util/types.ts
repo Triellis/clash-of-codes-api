@@ -2,7 +2,7 @@ import { TokenPayload } from "google-auth-library";
 import { ObjectId } from "mongodb";
 
 export type GoogleTokenPayload = TokenPayload | 401;
-export type userCol = {
+export type UserCol = {
 	_id?: ObjectId;
 	name: String;
 	email: String;
@@ -11,4 +11,11 @@ export type userCol = {
 	visits: number;
 	createdAt: Date;
 	lastVisit: Date;
+};
+
+export type UserOnClient = Omit<UserCol, "visits" | "createdAt" | "lastVisit">;
+export const UserOnClientProj = {
+	visits: 0,
+	createdAt: 0,
+	lastVisit: 0,
 };

@@ -1,8 +1,13 @@
 import { NextFunction } from "express";
 import { Request, Response } from "express";
-import { verifyToken } from "./functions";
+import { verifyGoogleToken, verifyServerToken } from "./functions";
 
-const envList = ["GOOGLE_CLIENT_SECRET", "GOOGLE_CLIENT_ID", "MONGO_URI"];
+const envList = [
+	"GOOGLE_CLIENT_SECRET",
+	"GOOGLE_CLIENT_ID",
+	"MONGO_URI",
+	"JWT_SECRET",
+];
 
 export function verifyEnv(req: Request, res: Response, next: NextFunction) {
 	const missingEnvVariables = envList.filter(
@@ -23,16 +28,21 @@ export function verifyEnv(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function auth(req: Request, res: Response, next: NextFunction) {
-	const token = req.cookies["token"];
+	if (req.path === "/login") {
+		next();
+		return;
+	}
+	const token = req.cookies["server_token"];
 	if (!token) {
-		res.status(401).send("unauthorized. no token found");
+		res.status(401).send("unauthorized. no server token found");
 		return;
 	}
 
-	const payload = await verifyToken(token);
+	const status = await verifyServerToken(token);
 
-	if (payload == 401) {
-		return res.sendStatus(401);
+	if (!status) {
+		res.status(401).send("unauthorized. invalid token");
+		return;
 	}
 
 	// console.log(payload);
