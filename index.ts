@@ -14,6 +14,7 @@ const corsOptions = {
 		"http://localhost:3000",
 		"http://localhost:3001",
 		"https://clash-of-codes-five.vercel.app",
+		"https://clash-of-codes-api.onrender.com",
 	],
 	credentials: true, //access-control-allow-credentials:true
 	optionSuccessStatus: 200,
