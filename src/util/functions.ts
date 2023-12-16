@@ -7,12 +7,11 @@ export async function verifyGoogleToken(
 ): Promise<GoogleTokenPayload> {
 	try {
 		const client = new OAuth2Client();
-		console.log("1");
+
 		const ticket = await client.verifyIdToken({
 			idToken: token,
 			audience: process.env.GOOGLE_CLIENT_ID,
 		});
-		console.log("2");
 
 		const payload = ticket.getPayload();
 

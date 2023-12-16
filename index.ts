@@ -10,7 +10,11 @@ import { connectToDatabase, getClient } from "./src/util/db";
 const app = express();
 const port = 3001;
 const corsOptions = {
-	origin: ["http://localhost:3000", "http://localhost:3001"],
+	origin: [
+		"http://localhost:3000",
+		"http://localhost:3001",
+		"https://clash-of-codes-five.vercel.app",
+	],
 	credentials: true, //access-control-allow-credentials:true
 	optionSuccessStatus: 200,
 };
