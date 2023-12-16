@@ -10,6 +10,7 @@ const envList = [
 ];
 
 export function verifyEnv(req: Request, res: Response, next: NextFunction) {
+	console.log(req.cookies);
 	const missingEnvVariables = envList.filter(
 		(envVariable) => !process.env[envVariable]
 	);

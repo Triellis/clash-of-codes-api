@@ -5,7 +5,7 @@ import { UserCol, UserOnClient, UserOnClientProj } from "../util/types";
 
 export default async function login(req: Request, res: Response) {
 	const token = req.cookies["google_token"];
-	console.log(req.cookies);
+
 	if (!token) {
 		res.status(401).send("unauthorized. no token found");
 		return;
