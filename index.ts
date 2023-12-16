@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
-import { auth, verifyEnv } from "./src/util/middlewares";
+import { auth, authToCookie, verifyEnv } from "./src/util/middlewares";
 import login from "./src/routes/login";
 import { connectToDatabase, getClient } from "./src/util/db";
 const app = express();
@@ -22,6 +22,7 @@ const corsOptions = {
 
 //  middleware
 app.use(cors(corsOptions));
+app.use(authToCookie);
 app.use(cookieParser());
 app.use(verifyEnv);
 app.use(auth);

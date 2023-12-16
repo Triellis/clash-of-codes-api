@@ -1,7 +1,7 @@
 import { NextFunction } from "express";
 import { Request, Response } from "express";
-import { verifyGoogleToken, verifyServerToken } from "./functions";
-
+import { verifyServerToken } from "./functions";
+import cookie from "cookie";
 const envList = [
 	"GOOGLE_CLIENT_SECRET",
 	"GOOGLE_CLIENT_ID",
@@ -10,7 +10,6 @@ const envList = [
 ];
 
 export function verifyEnv(req: Request, res: Response, next: NextFunction) {
-	console.log(req.cookies);
 	const missingEnvVariables = envList.filter(
 		(envVariable) => !process.env[envVariable]
 	);
@@ -49,4 +48,12 @@ export async function auth(req: Request, res: Response, next: NextFunction) {
 	// console.log(payload);
 
 	next(); // Call the next middleware in the stack
+}
+
+export function authToCookie(req: Request, res: Response, next: NextFunction) {
+	if (!req.headers.auth) {
+		return res.status(401).send("you must provide auth header");
+	}
+	req.cookies = cookie.parse(req.headers.auth as string);
+	next();
 }
