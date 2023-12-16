@@ -1,10 +1,12 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
 
-import { auth, verifyEnv } from "./middlewares";
-dotenv.config();
+import { auth, verifyEnv } from "./src/util/middlewares";
+import login from "./src/routes/login";
+import { connectToDatabase, getClient } from "./src/util/db";
 const app = express();
 const port = 3001;
 const corsOptions = {
@@ -13,18 +15,20 @@ const corsOptions = {
 	optionSuccessStatus: 200,
 };
 
-// Use the middleware for all routes
+//  middleware
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(verifyEnv);
 app.use(auth);
 
+connectToDatabase();
+
 app.get("/", (req, res) => {
 	res.send("Hello World!");
 });
+app.get("/login", login);
 app.listen(port, () => {
-	console.log(`Example app listening at http://localhost:${port}`);
+	console.log(`clash-of-codes api @ http://localhost:${port}`);
 });
-
-app.get("/login");
-console.log("hello");
+const client = getClient();
+client.close();
