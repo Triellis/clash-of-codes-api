@@ -72,7 +72,7 @@ export async function fetchConfig(start: number, end: number) {
 	const configObj: Contest[] = config.map(
 		(item: string) => JSON.parse(item) as Contest
 	);
-
+	// console.log(configObj);
 	return configObj;
 }
 

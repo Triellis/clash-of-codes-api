@@ -11,6 +11,7 @@ const envList = [
 	"REDIS_HOST",
 	"CF_API_KEY",
 	"CF_SECRET",
+	"MAX_RESULTS",
 ];
 
 export function verifyEnv(req: Request, res: Response, next: NextFunction) {

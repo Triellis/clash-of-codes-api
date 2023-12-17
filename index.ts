@@ -33,15 +33,7 @@ connectToDatabase();
 connectToRedis();
 
 app.use("/", router);
-console.log(
-	addConfig({
-		Team1: "RG",
-		Team2: "BW",
-		ContestCode: 12461,
-		DateAdded: new Date(),
-		Live: true,
-	})
-);
+console.log(fetchConfig(0, 5));
 
 app.listen(port, () => {
 	console.log(`clash-of-codes api @ http://localhost:${port}`);
