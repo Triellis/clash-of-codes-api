@@ -1,5 +1,5 @@
 import { OAuth2Client, TokenPayload } from "google-auth-library";
-import { Contest, GoogleTokenPayload } from "./types";
+import { Contest, GoogleTokenPayload, UserOnClient } from "./types";
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -39,6 +39,10 @@ export async function signJWT(json: any) {
 	});
 
 	return myJWT;
+}
+
+export async function getSession(req: Request) {
+	return (await jwt.decode(req.cookies.server_token)) as UserOnClient;
 }
 
 export async function updateLeaderboard(

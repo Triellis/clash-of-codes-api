@@ -9,6 +9,7 @@ import { connectToRedis } from "./src/util/redis";
 import { connectToDatabase, getClient } from "./src/util/db";
 import router from "./src/routes";
 import bodyParser from "body-parser";
+
 const app = express();
 const port = 3001;
 const corsOptions = {
@@ -30,6 +31,7 @@ app.use(verifyEnv);
 app.use(auth);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
 connectToDatabase();
 connectToRedis();
 
