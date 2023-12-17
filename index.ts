@@ -8,7 +8,7 @@ import { auth, authToCookie, verifyEnv } from "./src/util/middlewares";
 import { connectToRedis } from "./src/util/redis";
 import { connectToDatabase, getClient } from "./src/util/db";
 import router from "./src/routes";
-import { addConfig, deleteConfig, fetchConfig } from "./src/util/functions";
+import bodyParser from "body-parser";
 const app = express();
 const port = 3001;
 const corsOptions = {
@@ -28,20 +28,22 @@ app.use(authToCookie);
 app.use(cookieParser());
 app.use(verifyEnv);
 app.use(auth);
-
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 connectToDatabase();
 connectToRedis();
 
 app.use("/", router);
-console.log(
-	addConfig({
-		Team1: "RG",
-		Team2: "BW",
-		ContestCode: 12461,
-		DateAdded: new Date(),
-		Live: true,
-	})
-);
+// console.log(
+// 	addConfig({
+// 		Team1: "RG",
+// 		Team2: "BW",
+// 		ContestCode: 12461,
+// 		DateAdded: new Date(),
+// 		Live: true,
+// 	})
+// );
+// fetchConfig(0, 5);
 
 app.listen(port, () => {
 	console.log(`clash-of-codes api @ http://localhost:${port}`);
