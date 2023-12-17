@@ -5,7 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import { auth, authToCookie, verifyEnv } from "./src/util/middlewares";
-import login from "./src/routes/login";
+import { connectToRedis } from "./src/util/redis";
 import { connectToDatabase, getClient } from "./src/util/db";
 import router from "./src/routes";
 const app = express();
@@ -29,6 +29,7 @@ app.use(verifyEnv);
 app.use(auth);
 
 connectToDatabase();
+connectToRedis();
 
 app.use("/", router);
 

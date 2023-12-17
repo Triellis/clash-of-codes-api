@@ -7,6 +7,10 @@ const envList = [
 	"GOOGLE_CLIENT_ID",
 	"MONGO_URI",
 	"JWT_SECRET",
+	"REDIS_PASS",
+	"REDIS_HOST",
+	"CF_API_KEY",
+	"CF_SECRET",
 ];
 
 export function verifyEnv(req: Request, res: Response, next: NextFunction) {

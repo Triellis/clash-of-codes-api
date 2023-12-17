@@ -2,6 +2,8 @@ import { OAuth2Client, TokenPayload } from "google-auth-library";
 import { GoogleTokenPayload } from "./types";
 import { Request } from "express";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { RedisClientType } from "redis";
 export async function verifyGoogleToken(
 	token: string
 ): Promise<GoogleTokenPayload> {
@@ -36,4 +38,29 @@ export async function signJWT(json: any) {
 	});
 
 	return myJWT;
+}
+
+export async function updateLeaderboard(
+	redisClient: RedisClientType,
+	contestId: number
+) {
+	const curr_time = Math.floor(new Date().getTime() / 1000);
+	const apiKey = process.env.CF_API_KEY;
+	const secret = process.env.CF_SECRET;
+	if (!apiKey || !secret) {
+		throw new Error("API key or secret is missing");
+	}
+
+	const signature = crypto
+		.createHash("sha512")
+		.update(
+			`123456/contest.standings?apiKey=${apiKey}&contestId=${contestId}&time=${curr_time}#${secret}`
+		)
+		.digest("hex");
+
+	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
+
+	const resp = await fetch(requestUrl);
+	const data = await resp.json();
+	await redisClient.set("leaderboard", JSON.stringify(data));
 }
