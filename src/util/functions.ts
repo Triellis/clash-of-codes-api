@@ -1,9 +1,10 @@
 import { OAuth2Client, TokenPayload } from "google-auth-library";
-import { GoogleTokenPayload } from "./types";
+import { Contest, GoogleTokenPayload } from "./types";
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { RedisClientType } from "redis";
+import { getRedisClient } from "./redis";
 export async function verifyGoogleToken(
 	token: string
 ): Promise<GoogleTokenPayload> {
@@ -63,4 +64,36 @@ export async function updateLeaderboard(
 	const resp = await fetch(requestUrl);
 	const data = await resp.json();
 	await redisClient.set("leaderboard", JSON.stringify(data));
+}
+
+export async function fetchConfig(start: number, end: number) {
+	const redisClient = getRedisClient();
+	const config = await redisClient.zRange("leaderboardConfig", start, end);
+	const configObj: Contest[] = config.map(
+		(item: string) => JSON.parse(item) as Contest
+	);
+
+	return configObj;
+}
+
+export async function deleteConfig(index: number) {
+	const redisClient = getRedisClient();
+	// ZREMRANGEBYSCORE leaderboardConfig 2 2
+	const ak = await redisClient.zRemRangeByScore(
+		"leaderboardConfig",
+		index,
+		index
+	);
+
+	return ak;
+}
+
+export async function addConfig(contest: Contest) {
+	const redisClient = getRedisClient();
+	const ak = await redisClient.zAdd("leaderboardConfig", {
+		score: contest.DateAdded.getTime(),
+		value: JSON.stringify(contest),
+	});
+
+	return ak;
 }
