@@ -5,6 +5,7 @@ export type GoogleTokenPayload = TokenPayload | 401;
 type Clan = "BW" | "RG" | "YB" | "PP";
 
 export interface Contest {
+	Score: number;
 	Team1: Clan;
 	Team2: Clan;
 	ContestCode: number;

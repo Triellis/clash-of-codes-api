@@ -88,10 +88,14 @@ export async function deleteConfig(index: number) {
 	return ak;
 }
 
-export async function addConfig(contest: Contest) {
+export async function addConfig(contest: Omit<Contest, "Score">) {
 	const redisClient = getRedisClient();
+	const elemCount = await redisClient.zCount("leaderboardConfig", 0, "+inf");
+	let completeContest: Contest = contest as Contest;
+	completeContest["Score"] = elemCount;
+
 	const ak = await redisClient.zAdd("leaderboardConfig", {
-		score: contest.DateAdded.getTime(),
+		score: elemCount,
 		value: JSON.stringify(contest),
 	});
 
