@@ -28,7 +28,9 @@ export async function getConfig(req: Request, res: Response) {
 						Team2: searchRegex,
 					},
 					{
-						ContestCode: searchRegex,
+						ContestCode: {
+							$eq: Number(searchQuery),
+						},
 					},
 				],
 			},
