@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express";
 
-import { getConfig, postConfig } from "./config";
+import { deleteConfig, getConfig, postConfig, updateConfig } from "./config";
 import { getSession } from "../../util/functions";
 const router = Router();
 
@@ -23,4 +23,6 @@ export async function validateAdmin(
 router.use(validateAdmin);
 router.get("/config", getConfig);
 router.post("/config", postConfig);
+router.delete("/config", deleteConfig);
+router.put("/config", updateConfig);
 export default router;

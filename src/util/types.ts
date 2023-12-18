@@ -4,8 +4,8 @@ import { ObjectId } from "mongodb";
 export type GoogleTokenPayload = TokenPayload | 401;
 type Clan = "BW" | "RG" | "YB" | "PP";
 
-export interface Contest {
-	Score: number;
+export interface ContestCol {
+	_id?: ObjectId;
 	Team1: Clan;
 	Team2: Clan;
 	ContestCode: number;
