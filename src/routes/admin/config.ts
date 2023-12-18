@@ -9,15 +9,29 @@ import { ObjectId } from "mongodb";
 export async function getConfig(req: Request, res: Response) {
 	const query = req.query;
 	const page = Number(query.page) || 1;
+	const searchQuery = (query.searchQuery as string) || "";
 	const maxResults =
 		Number(query.maxResults) || Number(process.env.MAX_RESULTS);
 	const skip = (page - 1) * maxResults;
 
 	const db = getDB();
 	const col = db.collection<ContestCol>("Contests");
+	const searchRegex = new RegExp(searchQuery, "i");
 	const configData = await col
 		.find(
-			{},
+			{
+				$or: [
+					{
+						Team1: searchRegex,
+					},
+					{
+						Team2: searchRegex,
+					},
+					{
+						ContestCode: searchRegex,
+					},
+				],
+			},
 			{
 				sort: {
 					dateAdded: 1,
