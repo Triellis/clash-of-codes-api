@@ -34,7 +34,7 @@ export async function getConfig(req: Request, res: Response) {
 			},
 			{
 				sort: {
-					dateAdded: 1,
+					DateAdded: -1,
 				},
 			}
 		)

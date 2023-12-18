@@ -47,27 +47,25 @@ export async function getSession(req: Request) {
 	return (await jwt.decode(req.cookies.server_token)) as UserOnClient;
 }
 
-export async function updateLeaderboard(
-	redisClient: RedisClientType,
-	contestId: number
-) {
+export async function getScoreFromCF(contestId: number, groupCode: string) {
 	const curr_time = Math.floor(new Date().getTime() / 1000);
 	const apiKey = process.env.CF_API_KEY;
 	const secret = process.env.CF_SECRET;
-	if (!apiKey || !secret) {
-		throw new Error("API key or secret is missing");
-	}
 
 	const signature = crypto
 		.createHash("sha512")
 		.update(
-			`123456/contest.standings?apiKey=${apiKey}&contestId=${contestId}&time=${curr_time}#${secret}`
+			`123456/contest.standings?apiKey=${apiKey}&contestId=${contestId}&groupCode=${groupCode}&time=${curr_time}#${secret}`
 		)
 		.digest("hex");
 
-	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
+	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&groupCode=${groupCode}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
 
 	const resp = await fetch(requestUrl);
 	const data = await resp.json();
-	await redisClient.set("leaderboard", JSON.stringify(data));
+	console.log(data["result"]["rows"]);
+	return data;
+	// await redisClient.set("leaderboard", JSON.stringify(data));
 }
+
+// getScoreFromCF(481714, "UTbmZ31r4w");
