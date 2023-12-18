@@ -46,13 +46,14 @@ export async function getConfig(req: Request, res: Response) {
 }
 
 export async function postConfig(req: Request, res: Response) {
-	console.log(req.body);
 	const body = req.body;
 	if (!body) {
 		return res.send("Please provide a body").status(400);
 	}
 
 	const contest: ContestCol = body;
+	contest["DateAdded"] = new Date();
+	contest["Live"] = true;
 	const db = getDB();
 	const ak = await db.collection<ContestCol>("Contests").insertOne(contest);
 	if (!ak.acknowledged) {
