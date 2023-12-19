@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserCol, UserOnClientProj } from "../../util/types";
 import { getDB } from "../../util/db";
+import { ObjectId } from "mongodb";
 
 export async function getUsers(req: Request, res: Response) {
 	const query = req.query;
@@ -47,4 +48,22 @@ export async function getUsers(req: Request, res: Response) {
 		.toArray();
 
 	return res.json(usersData);
+}
+
+export async function deleteUser(req: Request, res: Response) {
+	const query = req.query;
+	const id = query.id as string;
+	if (!id) {
+		return res.send("Please provide an id in the query").status(400);
+	}
+
+	const db = getDB();
+	const col = db.collection<UserCol>("Users");
+	const deleteResult = await col.deleteOne({
+		_id: new ObjectId(id),
+	});
+	if (deleteResult.deletedCount === 0) {
+		return res.send("No user found with that id").status(400);
+	}
+	return res.send("User deleted successfully").status(200);
 }
