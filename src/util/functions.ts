@@ -47,6 +47,22 @@ export async function getSession(req: Request) {
 	return (await jwt.decode(req.cookies.server_token)) as UserOnClient;
 }
 
+export function replaceFullName(s: string) {
+	// blue wizards -> BW
+	// red giants -> RG
+	// purple pekkas -> PP
+	// yellow barbarians -> YB
+
+	s = s.toLowerCase();
+	// replace if the string contains the substring of the team name
+	s = s.replace(/blue/g, "BW");
+	s = s.replace(/red/g, "RG");
+	s = s.replace(/purple/g, "PP");
+	s = s.replace(/yellow/g, "YB");
+
+	return s;
+}
+
 export async function getScoreFromCF(contestId: number, groupCode: string) {
 	const curr_time = Math.floor(new Date().getTime() / 1000);
 	const apiKey = process.env.CF_API_KEY;

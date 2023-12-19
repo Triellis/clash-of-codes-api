@@ -5,6 +5,7 @@ import { getDB } from "../../util/db";
 import { getRedisClient } from "../../util/redis";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
+import { replaceFullName } from "../../util/functions";
 
 export async function getConfig(req: Request, res: Response) {
 	const query = req.query;
@@ -17,15 +18,16 @@ export async function getConfig(req: Request, res: Response) {
 	const db = getDB();
 	const col = db.collection<ContestCol>("Contests");
 	const searchRegex = new RegExp(searchQuery, "i");
+	const teamRegex = new RegExp(replaceFullName(searchQuery), "i");
 	const configData = await col
 		.find(
 			{
 				$or: [
 					{
-						Team1: searchRegex,
+						Team1: teamRegex,
 					},
 					{
-						Team2: searchRegex,
+						Team2: teamRegex,
 					},
 					{
 						ContestCode: searchRegex,
