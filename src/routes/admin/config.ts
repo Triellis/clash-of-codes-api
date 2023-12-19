@@ -38,6 +38,7 @@ export async function getConfig(req: Request, res: Response) {
 				},
 			}
 		)
+
 		.skip(skip)
 		.limit(maxResults)
 		.toArray();
