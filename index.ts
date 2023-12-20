@@ -36,7 +36,7 @@ connectToRedis();
 app.use(cors(corsOptions));
 app.use(authToCookie);
 app.use(cookieParser());
-app.use(verifyEnv);
+
 app.use(auth);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -62,6 +62,7 @@ wss.on("connection", async (ws) => {
 
 const client = getClient();
 client.on("open", () => {
+	verifyEnv();
 	syncData();
 	server.listen(port, () => {
 		console.log(`clash-of-codes api @ http://localhost:${port}`);

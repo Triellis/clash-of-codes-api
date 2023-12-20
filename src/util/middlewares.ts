@@ -12,24 +12,18 @@ const envList = [
 	"CF_API_KEY",
 	"CF_SECRET",
 	"MAX_RESULTS",
+	"GROUP_CODE",
 ];
 
-export function verifyEnv(req: Request, res: Response, next: NextFunction) {
+export function verifyEnv() {
 	const missingEnvVariables = envList.filter(
 		(envVariable) => !process.env[envVariable]
 	);
 	if (missingEnvVariables.length > 0) {
-		console.error(
+		throw new Error(
 			`Missing environment variables: ${missingEnvVariables.join(", ")}`
 		);
-		if (process.env.NODE_ENV === "production") {
-			return res.sendStatus(500);
-		} else {
-			return res.status(500).send("Missing environment variables");
-		}
 	}
-
-	next();
 }
 
 export async function auth(req: Request, res: Response, next: NextFunction) {
