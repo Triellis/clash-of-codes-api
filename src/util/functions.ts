@@ -80,10 +80,11 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 			`123456/contest.standings?apiKey=${apiKey}&contestId=${contestId}&groupCode=${groupCode}&time=${curr_time}#${secret}`
 		)
 		.digest("hex");
-
+	// return [];
 	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&groupCode=${groupCode}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
 
 	const resp = await fetch(requestUrl);
+
 	const data = await resp.json();
 	if (data.status === "FAILED") {
 		return [];

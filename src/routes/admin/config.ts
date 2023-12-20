@@ -117,6 +117,7 @@ export async function updateConfig(req: Request, res: Response) {
 	if (!ak.acknowledged) {
 		return res.status(500).send();
 	}
+
 	const hash = crypto
 		.createHash("sha256")
 		.update(JSON.stringify(contest) + new Date().getTime().toString())
