@@ -10,6 +10,7 @@ import { Request } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { getDB } from "./db";
+import { getRedisClient } from "./redis";
 
 export async function verifyGoogleToken(
 	token: string
@@ -32,7 +33,7 @@ export async function verifyGoogleToken(
 
 export async function verifyServerToken(token: string) {
 	try {
-		const decoded = await jwt.verify(token, process.env.JWT_SECRET!);
+		const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 		return true;
 	} catch {
 		return false;
@@ -40,7 +41,7 @@ export async function verifyServerToken(token: string) {
 }
 
 export async function signJWT(json: any) {
-	const myJWT = await jwt.sign(json, process.env.JWT_SECRET!, {
+	const myJWT = jwt.sign(json, process.env.JWT_SECRET!, {
 		algorithm: "HS256",
 	});
 
@@ -48,7 +49,7 @@ export async function signJWT(json: any) {
 }
 
 export async function getSession(req: Request) {
-	return (await jwt.decode(req.cookies.server_token)) as UserOnClient;
+	return jwt.decode(req.cookies.server_token) as UserOnClient;
 }
 
 export function replaceFullName(s: string) {
@@ -98,8 +99,7 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 
 		return obj;
 	});
-	console.log(result);
-	distributeMembers(result);
+
 	return result as CFAPIResponse[];
 	// await redisClient.set("leaderboard", JSON.stringify(data));
 }
@@ -175,7 +175,89 @@ async function distributeMembers(cfData: CFAPIResponse[]) {
 			}
 		}
 	}
-	console.log(distributedData);
+	return distributedData;
+}
+
+export async function getLiveContestCodes() {
+	const db = getDB();
+	const col = db.collection<ContestCol>("Contests");
+	const contests = await col
+		.find(
+			{
+				Live: true,
+			},
+			{
+				projection: {
+					ContestCode: 1,
+					_id: 0,
+				},
+			}
+		)
+		.toArray();
+	const contestCodes = contests.map((element) => {
+		return element.ContestCode;
+	});
+
+	return contestCodes;
+}
+
+export async function syncData() {
+	// this is only for live contests
+	// this will run when the server starts and when the config changes
+	// get the config from the database
+	// get the contest codes from the config
+	// get the data from the cf api
+	// distribute the data to the users
+	// create a hashmap of who is in which clan and upload it to the redis
+	// send the data to the redis
+	const liveContestCodes = await getLiveContestCodes();
+	const redisClient = getRedisClient();
+	redisClient.rPush("liveContestCodes", liveContestCodes);
+
+	const cfData = [];
+	for (let i = 0; i < liveContestCodes.length; i++) {
+		const contestCode = liveContestCodes[i];
+		const data = await getScoreFromCF(Number(contestCode), "RXDkSayhcW");
+		cfData.push(data);
+	}
+	const usernamesToHash = [];
+	for (let i = 0; i < cfData.length; i++) {
+		const data = cfData[i];
+		for (let j = 0; j < data.length; j++) {
+			const user = data[j];
+			usernamesToHash.push(user.username);
+		}
+	}
+	const db = getDB();
+	const col = db.collection<UserCol>("Users");
+	const users = await col
+		.find(
+			{
+				cfUsername: {
+					$in: usernamesToHash,
+				},
+			},
+			{
+				projection: {
+					cfUsername: 1,
+					clan: 1,
+					name: 1,
+				},
+			}
+		)
+		.toArray();
+	const usernamesToClanNName: {
+		[username: string]: string;
+	} = {};
+	for (let i = 0; i < users.length; i++) {
+		const user = users[i];
+		const username = user.cfUsername as string;
+		const clan = user.clan as string;
+		const name = user.name as string;
+		usernamesToClanNName[username] = name + "\\;\\" + clan;
+	}
+	redisClient.hSet("usernamesToClanNName", usernamesToClanNName);
+	redisClient.set("cfData", JSON.stringify(cfData));
 }
 
 const contest_id = "435107";

@@ -15,6 +15,8 @@ import router from "./src/routes";
 import bodyParser from "body-parser";
 import ws from "ws";
 import http from "http";
+import { syncData } from "./src/util/functions";
+
 const app = express();
 const port = 3001;
 const corsOptions = {
@@ -43,6 +45,12 @@ app.use("/", router);
 
 const server = http.createServer(app);
 const wss = new ws.Server({ server });
+const redisClient2 = getNewRedisClient();
+redisClient2.connect();
+
+redisClient2.subscribe("configHash", (m, c) => {
+	console.log(m);
+});
 wss.on("connection", async (ws) => {
 	console.log("WebSocket connection established");
 
@@ -50,19 +58,16 @@ wss.on("connection", async (ws) => {
 	ws.on("close", () => {
 		console.log("WebSocket connection closed");
 	});
-	const redisClient = getNewRedisClient();
-	await redisClient.connect();
-
-	redisClient.subscribe("configHash", (m, c) => {
-		console.log(m, c);
-	});
-});
-
-server.listen(port, () => {
-	console.log(`clash-of-codes api @ http://localhost:${port}`);
 });
 
 const client = getClient();
+client.on("open", () => {
+	syncData();
+	server.listen(port, () => {
+		console.log(`clash-of-codes api @ http://localhost:${port}`);
+	});
+});
 client.close();
+
 // const redisClient = getRedisClient();
 // redisClient.disconnect();
