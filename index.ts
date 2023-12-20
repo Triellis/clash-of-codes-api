@@ -58,13 +58,19 @@ wss.on("connection", async (ws) => {
 	ws.on("close", () => {
 		console.log("WebSocket connection closed");
 	});
+	// redisClient2.subscribe("live", (m, c) => {
+	// 	ws.send(m);
+	// });
 });
 
 const client = getClient();
 client.on("open", async () => {
 	verifyEnv();
 	await syncData();
-	await syncLeaderboardFromCF();
+
+	setInterval(async () => {
+		await syncLeaderboardFromCF();
+	}, 2500);
 	server.listen(port, () => {
 		console.log(`clash-of-codes api @ http://localhost:${port}`);
 	});

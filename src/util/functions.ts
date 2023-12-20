@@ -278,6 +278,7 @@ export async function syncLeaderboardFromCF() {
 	const redisClient = getRedisClient();
 	const liveContestCodes = await redisClient.sMembers("liveContestCodes");
 	const cfData: CFAPIResponse[][] = [];
+
 	for (let i = 0; i < liveContestCodes.length; i++) {
 		const contestCode = liveContestCodes[i];
 		const data = await getScoreFromCF(
@@ -289,6 +290,7 @@ export async function syncLeaderboardFromCF() {
 		}
 		cfData.push(data);
 	}
+
 	const usernames = [];
 	for (let i = 0; i < cfData.length; i++) {
 		for (let j = 0; j < cfData[i].length; j++) {
@@ -327,5 +329,6 @@ export async function syncLeaderboardFromCF() {
 			return modifiedElem;
 		});
 	});
-	await redisClient.set("Live", JSON.stringify(finalCfData));
+
+	await redisClient.publish("Live", JSON.stringify(finalCfData));
 }
