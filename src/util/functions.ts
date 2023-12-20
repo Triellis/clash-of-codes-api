@@ -1,8 +1,15 @@
 import { OAuth2Client, TokenPayload } from "google-auth-library";
-import { ContestCol, GoogleTokenPayload, UserOnClient } from "./types";
+import {
+	CFAPIResponse,
+	ContestCol,
+	GoogleTokenPayload,
+	UserCol,
+	UserOnClient,
+} from "./types";
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { getDB } from "./db";
 
 export async function verifyGoogleToken(
 	token: string
@@ -77,6 +84,7 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 	const resp = await fetch(requestUrl);
 	const data = await resp.json();
 	const result = data.result.rows.map((element: any) => {
+		// console.log(element);
 		const rank = element.rank;
 		const points = element.points;
 		const penalty = element.penalty;
@@ -87,17 +95,91 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 			penalty,
 			username,
 		};
+
 		return obj;
 	});
-	return result as {
-		rank: number;
-		points: number;
-		penalty: number;
-		username: string;
-	}[];
+	console.log(result);
+	distributeMembers(result);
+	return result as CFAPIResponse[];
 	// await redisClient.set("leaderboard", JSON.stringify(data));
 }
 
-const contest_id = "436414";
+async function distributeMembers(cfData: CFAPIResponse[]) {
+	const members = cfData.map((element) => {
+		return element.username;
+	});
+	const cfDataIndexed: {
+		[username: string]: CFAPIResponse;
+	} = {};
+	cfData.forEach((element) => {
+		cfDataIndexed[element.username] = element;
+	});
+	const db = getDB();
+	const col = db.collection<UserCol>("Users");
+	const users = await col
+		.find(
+			{
+				cfUsername: {
+					$in: members,
+				},
+			},
+			{
+				projection: {
+					cfUsername: 1,
+					clan: 1,
+					name: 1,
+				},
+			}
+		)
+		.toArray();
+	const distributedData: {
+		[clan: string]: {
+			name: string;
+			cfUsername: string;
+			rank: number;
+			points: number;
+			penalty: number;
+		}[];
+	} = {};
+
+	for (let i = 0; i < users.length; i++) {
+		const user = users[i];
+		const clan = user.clan as string;
+
+		const cfUsername = user.cfUsername as string;
+		const name = user.name as string;
+		const cfData = cfDataIndexed[cfUsername];
+		const rank = cfData.rank;
+		const points = cfData.points;
+		const penalty = cfData.penalty;
+
+		const obj = {
+			name,
+			cfUsername,
+			rank,
+			points,
+			penalty,
+		};
+		if (!distributedData[clan]) {
+			distributedData[clan] = [];
+		}
+		distributedData[clan].push(obj);
+		for (let clan in distributedData) {
+			distributedData[clan].sort((a, b) => {
+				return a.rank - b.rank;
+			});
+			let rank = 1;
+			for (let i = 0; i < distributedData[clan].length; i++) {
+				distributedData[clan][i].rank = rank;
+				rank++;
+			}
+		}
+	}
+	console.log(distributedData);
+}
+
+const contest_id = "435107";
 const group_code = "RXDkSayhcW";
+
 getScoreFromCF(Number(contest_id), group_code);
+// getScoreFromCF(Number(436414), group_code);

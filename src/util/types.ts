@@ -31,3 +31,10 @@ export const UserOnClientProj = {
 	createdAt: 0,
 	lastVisit: 0,
 };
+
+export type CFAPIResponse = {
+	rank: number;
+	points: number;
+	penalty: number;
+	username: string;
+};
