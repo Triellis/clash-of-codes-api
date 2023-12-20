@@ -58,9 +58,9 @@ wss.on("connection", async (ws) => {
 	ws.on("close", () => {
 		console.log("WebSocket connection closed");
 	});
-	// redisClient2.subscribe("live", (m, c) => {
-	// 	ws.send(m);
-	// });
+	redisClient2.subscribe("live", (m, c) => {
+		ws.send(m);
+	});
 });
 
 const client = getClient();
