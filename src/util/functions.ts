@@ -181,5 +181,5 @@ async function distributeMembers(cfData: CFAPIResponse[]) {
 const contest_id = "435107";
 const group_code = "RXDkSayhcW";
 
-getScoreFromCF(Number(contest_id), group_code);
+// getScoreFromCF(Number(contest_id), group_code);
 // getScoreFromCF(Number(436414), group_code);
