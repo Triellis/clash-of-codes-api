@@ -20,3 +20,14 @@ export function connectToRedis() {
 export function getRedisClient() {
 	return client;
 }
+
+export function getNewRedisClient() {
+	const client = createClient({
+		password: process.env.REDIS_PASS,
+		socket: {
+			host: process.env.REDIS_HOST,
+			port: 10533,
+		},
+	});
+	return client;
+}

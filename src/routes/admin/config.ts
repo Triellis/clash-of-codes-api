@@ -67,7 +67,7 @@ export async function postConfig(req: Request, res: Response) {
 		.update(JSON.stringify(contest) + new Date().getTime().toString())
 		.digest("hex");
 	const redisClient = getRedisClient();
-	await redisClient.set("configHash", hash);
+	await redisClient.publish("configHash", hash);
 
 	return res.status(200).send();
 }
@@ -91,7 +91,7 @@ export async function deleteConfig(req: Request, res: Response) {
 		.update(new Date().getTime().toString())
 		.digest("hex");
 	const redisClient = getRedisClient();
-	await redisClient.set("configHash", hash);
+	await redisClient.publish("configHash", hash);
 
 	return res.status(200).send();
 }
@@ -122,7 +122,7 @@ export async function updateConfig(req: Request, res: Response) {
 		.update(JSON.stringify(contest) + new Date().getTime().toString())
 		.digest("hex");
 	const redisClient = getRedisClient();
-	await redisClient.set("configHash", hash);
+	await redisClient.publish("configHash", hash);
 
 	return res.status(200).send();
 }
