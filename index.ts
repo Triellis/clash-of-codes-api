@@ -15,7 +15,7 @@ import router from "./src/routes";
 import bodyParser from "body-parser";
 import ws from "ws";
 import http from "http";
-import { syncData } from "./src/util/functions";
+import { syncData, syncLeaderboardFromCF } from "./src/util/functions";
 
 const app = express();
 const port = 3001;
@@ -48,8 +48,8 @@ const wss = new ws.Server({ server });
 const redisClient2 = getNewRedisClient();
 redisClient2.connect();
 
-redisClient2.subscribe("configHash", (m, c) => {
-	console.log(m);
+redisClient2.subscribe("configHash", async (m, c) => {
+	await syncData();
 });
 wss.on("connection", async (ws) => {
 	console.log("WebSocket connection established");
@@ -61,9 +61,10 @@ wss.on("connection", async (ws) => {
 });
 
 const client = getClient();
-client.on("open", () => {
+client.on("open", async () => {
 	verifyEnv();
-	syncData();
+	await syncData();
+	await syncLeaderboardFromCF();
 	server.listen(port, () => {
 		console.log(`clash-of-codes api @ http://localhost:${port}`);
 	});

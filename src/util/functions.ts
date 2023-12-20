@@ -1,6 +1,7 @@
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import {
 	CFAPIResponse,
+	Clan,
 	ContestCol,
 	GoogleTokenPayload,
 	UserCol,
@@ -84,6 +85,9 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 
 	const resp = await fetch(requestUrl);
 	const data = await resp.json();
+	if (data.status === "FAILED") {
+		return [];
+	}
 	const result = data.result.rows.map((element: any) => {
 		// console.log(element);
 		const rank = element.rank;
@@ -178,7 +182,7 @@ async function distributeMembers(cfData: CFAPIResponse[]) {
 	return distributedData;
 }
 
-export async function getLiveContestCodes() {
+export async function getLiveContestCodesFromMongo() {
 	const db = getDB();
 	const col = db.collection<ContestCol>("Contests");
 	const contests = await col
@@ -210,16 +214,24 @@ export async function syncData() {
 	// distribute the data to the users
 	// create a hashmap of who is in which clan and upload it to the redis
 	// send the data to the redis
-	const liveContestCodes = await getLiveContestCodes();
+	const liveContestCodes = await getLiveContestCodesFromMongo();
 	const redisClient = getRedisClient();
-	redisClient.rPush("liveContestCodes", liveContestCodes);
+	redisClient.del("liveContestCodes");
+	redisClient.sAdd("liveContestCodes", liveContestCodes);
 
 	const cfData = [];
 	for (let i = 0; i < liveContestCodes.length; i++) {
 		const contestCode = liveContestCodes[i];
-		const data = await getScoreFromCF(Number(contestCode), "RXDkSayhcW");
+		const data = await getScoreFromCF(
+			Number(contestCode),
+			process.env.GROUP_CODE as string
+		);
+		if (data.length == 0) {
+			continue;
+		}
 		cfData.push(data);
 	}
+
 	const usernamesToHash = [];
 	for (let i = 0; i < cfData.length; i++) {
 		const data = cfData[i];
@@ -228,6 +240,7 @@ export async function syncData() {
 			usernamesToHash.push(user.username);
 		}
 	}
+
 	const db = getDB();
 	const col = db.collection<UserCol>("Users");
 	const users = await col
@@ -256,12 +269,63 @@ export async function syncData() {
 		const name = user.name as string;
 		usernamesToClanNName[username] = name + "\\;\\" + clan;
 	}
-	redisClient.hSet("usernamesToClanNName", usernamesToClanNName);
-	redisClient.set("cfData", JSON.stringify(cfData));
+	// console.log(usernamesToClanNName);
+	if (Object.keys(usernamesToClanNName).length !== 0)
+		redisClient.hSet("usernamesToClanNName", usernamesToClanNName);
 }
 
-const contest_id = "435107";
-const group_code = "RXDkSayhcW";
+export async function syncLeaderboardFromCF() {
+	const redisClient = getRedisClient();
+	const liveContestCodes = await redisClient.sMembers("liveContestCodes");
+	const cfData: CFAPIResponse[][] = [];
+	for (let i = 0; i < liveContestCodes.length; i++) {
+		const contestCode = liveContestCodes[i];
+		const data = await getScoreFromCF(
+			Number(contestCode),
+			process.env.GROUP_CODE as string
+		);
+		if (data.length == 0) {
+			continue;
+		}
+		cfData.push(data);
+	}
+	const usernames = [];
+	for (let i = 0; i < cfData.length; i++) {
+		for (let j = 0; j < cfData[i].length; j++) {
+			usernames.push(cfData[i][j].username);
+		}
+	}
 
-// getScoreFromCF(Number(contest_id), group_code);
-// getScoreFromCF(Number(436414), group_code);
+	const relatedData = await redisClient.hmGet(
+		"usernamesToClanNName",
+		usernames
+	);
+	const usernamesToClanNName: {
+		[key: string]: {
+			name: string | undefined;
+			clan: Clan;
+		};
+	} = {};
+	for (let i = 0; i < relatedData.length; i++) {
+		let username = usernames[i];
+		let name, clan;
+		if (relatedData[i] !== null) {
+			[name, clan] = relatedData[i].split("\\;\\");
+		}
+		usernamesToClanNName[username] = {
+			name,
+			clan: clan as Clan,
+		};
+	}
+	const finalCfData = cfData.map((arr) => {
+		return arr.map((elem) => {
+			const modifiedElem = {
+				...elem,
+				...usernamesToClanNName[elem.username],
+			};
+
+			return modifiedElem;
+		});
+	});
+	await redisClient.set("Live", JSON.stringify(finalCfData));
+}

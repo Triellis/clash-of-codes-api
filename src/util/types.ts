@@ -2,7 +2,7 @@ import { TokenPayload } from "google-auth-library";
 import { ObjectId } from "mongodb";
 
 export type GoogleTokenPayload = TokenPayload | 401;
-type Clan = "BW" | "RG" | "YB" | "PP";
+export type Clan = "BW" | "RG" | "YB" | "PP";
 
 export interface ContestCol {
 	_id?: ObjectId;
