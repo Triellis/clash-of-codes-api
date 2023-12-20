@@ -3,10 +3,7 @@ import { ContestCol, GoogleTokenPayload, UserOnClient } from "./types";
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { RedisClientType } from "redis";
-import { getRedisClient } from "./redis";
-import { getClient, getDB } from "./db";
-import { ObjectId } from "mongodb";
+
 export async function verifyGoogleToken(
 	token: string
 ): Promise<GoogleTokenPayload> {
@@ -79,9 +76,28 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 
 	const resp = await fetch(requestUrl);
 	const data = await resp.json();
-	console.log(data["result"]["rows"]);
-	return data;
+	const result = data.result.rows.map((element: any) => {
+		const rank = element.rank;
+		const points = element.points;
+		const penalty = element.penalty;
+		const username = element.party.members[0].handle;
+		const obj = {
+			rank,
+			points,
+			penalty,
+			username,
+		};
+		return obj;
+	});
+	return result as {
+		rank: number;
+		points: number;
+		penalty: number;
+		username: string;
+	}[];
 	// await redisClient.set("leaderboard", JSON.stringify(data));
 }
 
-// getScoreFromCF(481714, "UTbmZ31r4w");
+const contest_id = "436414";
+const group_code = "RXDkSayhcW";
+getScoreFromCF(Number(contest_id), group_code);
