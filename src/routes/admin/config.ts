@@ -86,8 +86,11 @@ export async function postConfig(req: Request, res: Response) {
 export async function deleteConfig(req: Request, res: Response) {
 	const query = req.query;
 	const id = query.id;
+	console.log(query);
 	if (!id) {
 		res.send("Please provide a id in query").status(400);
+	} else if (ObjectId.isValid(id as string)) {
+		res.send(`${id} is not valid object id`).status(500);
 	}
 	const db = getDB();
 	const ak = await db
@@ -97,6 +100,7 @@ export async function deleteConfig(req: Request, res: Response) {
 	if (!ak.acknowledged) {
 		return res.status(500).send();
 	}
+
 	const hash = crypto
 		.createHash("sha256")
 		.update(new Date().getTime().toString())
@@ -112,7 +116,14 @@ export async function updateConfig(req: Request, res: Response) {
 	if (!body) {
 		return res.send("Please provide a body").status(400);
 	}
+	const validUpdateFields = ["Live"];
+	const updatedFields: any = {};
 
+	for (let k of Object.keys(body)) {
+		if (validUpdateFields.includes(k)) {
+			updatedFields[k] = body[k];
+		}
+	}
 	const contest: ContestCol = body;
 	const db = getDB();
 	const id = contest._id;
@@ -121,7 +132,7 @@ export async function updateConfig(req: Request, res: Response) {
 		{ _id: new ObjectId(id) },
 		{
 			$set: {
-				...contest,
+				...updatedFields,
 			},
 		}
 	);

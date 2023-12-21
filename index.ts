@@ -76,6 +76,7 @@ client.on("open", async () => {
 		console.log(`clash-of-codes api @ http://localhost:${port}`);
 	});
 });
+
 client.close();
 
 // const redisClient = getRedisClient();
