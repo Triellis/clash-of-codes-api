@@ -85,7 +85,7 @@ export async function isValidContestCode(contestId: string, groupCode: string) {
 	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&groupCode=${groupCode}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
 
 	const resp = await fetch(requestUrl);
-	console.log(await resp.json());
+
 	if (!resp.ok) {
 		return false;
 	}
@@ -106,43 +106,37 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 
 	// return [];
 	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&groupCode=${groupCode}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
+	try {
+		const resp = await fetch(requestUrl);
 
-	const resp = await fetch(requestUrl);
+		if (!resp.ok) {
+			return [];
+		}
 
-	if (!resp.ok) {
-		const redisClient = getRedisClient();
-		redisClient.sRem("liveContestCodes", String(contestId));
-		const mongoClient = getClient();
-		const db = mongoClient
-			.db("clash-of-codes")
-			.collection<ContestCol>("Contests")
-			.deleteOne({
-				ContestCode: String(contestId),
-			});
+		const data = await resp.json();
+		if (data.status === "FAILED") {
+			return [];
+		}
+		const result = data.result.rows.map((element: any) => {
+			// console.log(element);
+			const rank = element.rank;
+			const points = element.points;
+			const penalty = element.penalty;
+			const username = element.party.members[0].handle;
+			const obj = {
+				rank,
+				points,
+				penalty,
+				username,
+			};
+
+			return obj;
+		});
+
+		return result as CFAPIResponse[];
+	} catch {
 		return [];
 	}
-
-	const data = await resp.json();
-	if (data.status === "FAILED") {
-		return [];
-	}
-	const result = data.result.rows.map((element: any) => {
-		// console.log(element);
-		const rank = element.rank;
-		const points = element.points;
-		const penalty = element.penalty;
-		const username = element.party.members[0].handle;
-		const obj = {
-			rank,
-			points,
-			penalty,
-			username,
-		};
-
-		return obj;
-	});
-
-	return result as CFAPIResponse[];
 	// await redisClient.set("leaderboard", JSON.stringify(data));
 }
 
