@@ -256,7 +256,7 @@ export async function syncData() {
 
 	const db = getDB();
 	const col = db.collection<UserCol>("Users");
-	console.log(usernamesToHash);
+	// console.log(usernamesToHash);
 	const users = await col
 		.find(
 			{
@@ -283,7 +283,7 @@ export async function syncData() {
 		const name = user.name as string;
 		usernamesToClanNName[username] = name + "\\;\\" + clan;
 	}
-	console.log(usernamesToClanNName);
+	// console.log(usernamesToClanNName);
 	if (Object.keys(usernamesToClanNName).length !== 0)
 		redisClient.hSet("usernamesToClanNName", usernamesToClanNName);
 }
