@@ -82,7 +82,13 @@ export async function addUser(req: Request, res: Response) {
 			.status(400);
 	}
 
-	body = keepTheValidFields(body, ["name", "email", "role", "clan"]);
+	body = keepTheValidFields(body, [
+		"name",
+		"email",
+		"role",
+		"clan",
+		"cfUsername",
+	]);
 	if (!body.clan) {
 		body.clan = null;
 	}

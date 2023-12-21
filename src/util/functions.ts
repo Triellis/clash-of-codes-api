@@ -140,35 +140,13 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 	// await redisClient.set("leaderboard", JSON.stringify(data));
 }
 
-async function distributeMembers(cfData: CFAPIResponse[]) {
-	const members = cfData.map((element) => {
-		return element.username;
-	});
-	const cfDataIndexed: {
-		[username: string]: CFAPIResponse;
-	} = {};
-	cfData.forEach((element) => {
-		cfDataIndexed[element.username] = element;
-	});
-	const db = getDB();
-	const col = db.collection<UserCol>("Users");
-	const users = await col
-		.find(
-			{
-				cfUsername: {
-					$in: members,
-				},
-			},
-			{
-				projection: {
-					cfUsername: 1,
-					clan: 1,
-					name: 1,
-				},
-			}
-		)
-		.toArray();
-	const distributedData: {
+function rearrangeLeaderboard(
+	leaderboardData: (CFAPIResponse & {
+		clan: Clan;
+		name: string | undefined;
+	})[][]
+) {
+	type DistributedData = {
 		[clan: string]: {
 			name: string;
 			cfUsername: string;
@@ -176,41 +154,41 @@ async function distributeMembers(cfData: CFAPIResponse[]) {
 			points: number;
 			penalty: number;
 		}[];
-	} = {};
+	}[];
+	const distributedData: DistributedData = [];
+	for (let i = 0; i < leaderboardData.length; i++) {
+		const leaderboard = leaderboardData[i];
+		const finalData: any = {};
+		for (let j = 0; j < leaderboard.length; j++) {
+			const user = leaderboard[j];
+			const clan = user.clan;
 
-	for (let i = 0; i < users.length; i++) {
-		const user = users[i];
-		const clan = user.clan as string;
-
-		const cfUsername = user.cfUsername as string;
-		const name = user.name as string;
-		const cfData = cfDataIndexed[cfUsername];
-		const rank = cfData.rank;
-		const points = cfData.points;
-		const penalty = cfData.penalty;
-
-		const obj = {
-			name,
-			cfUsername,
-			rank,
-			points,
-			penalty,
-		};
-		if (!distributedData[clan]) {
-			distributedData[clan] = [];
+			if (finalData.hasOwnProperty(clan) === false) {
+				finalData[clan] = [];
+			}
+			finalData[clan].push({
+				name: user.name,
+				cfUsername: user.username,
+				rank: user.rank,
+				points: user.points,
+				penalty: user.penalty,
+			});
 		}
-		distributedData[clan].push(obj);
-		for (let clan in distributedData) {
-			distributedData[clan].sort((a, b) => {
+		for (const clan in finalData) {
+			finalData[clan].sort((a: any, b: any) => {
 				return a.rank - b.rank;
 			});
-			let rank = 1;
-			for (let i = 0; i < distributedData[clan].length; i++) {
-				distributedData[clan][i].rank = rank;
-				rank++;
+		}
+		for (const clan in finalData) {
+			for (let j = 0; j < finalData[clan].length; j++) {
+				const user = finalData[clan][j];
+				user.rank = j + 1;
 			}
 		}
+		// console.log(finalData);
+		distributedData.push(finalData);
 	}
+
 	return distributedData;
 }
 
@@ -278,6 +256,7 @@ export async function syncData() {
 
 	const db = getDB();
 	const col = db.collection<UserCol>("Users");
+	console.log(usernamesToHash);
 	const users = await col
 		.find(
 			{
@@ -304,7 +283,7 @@ export async function syncData() {
 		const name = user.name as string;
 		usernamesToClanNName[username] = name + "\\;\\" + clan;
 	}
-	// console.log(usernamesToClanNName);
+	console.log(usernamesToClanNName);
 	if (Object.keys(usernamesToClanNName).length !== 0)
 		redisClient.hSet("usernamesToClanNName", usernamesToClanNName);
 }
@@ -367,8 +346,9 @@ export async function syncLeaderboardFromCF() {
 			return modifiedElem;
 		});
 	});
+	const rearrangedCFData = rearrangeLeaderboard(finalCfData);
 
-	await redisClient.publish("live", JSON.stringify(finalCfData));
+	await redisClient.publish("live", JSON.stringify(rearrangedCFData));
 }
 
 export function keepTheValidFields(obj: any, validFields: string[]) {
