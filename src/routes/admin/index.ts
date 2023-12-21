@@ -2,7 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 
 import { deleteConfig, getConfig, postConfig, updateConfig } from "./config";
 import { getSession } from "../../util/functions";
-import { deleteUser, getUsers } from "./users";
+import { addUser, deleteUser, getUsers, updateUser } from "./users";
 const router = Router();
 
 async function isAdmin(req: Request) {
@@ -29,4 +29,7 @@ router.put("/config", updateConfig);
 
 router.get("/users", getUsers);
 router.delete("/users", deleteUser);
+router.post("/users", addUser);
+router.put("/users", updateUser);
+
 export default router;
