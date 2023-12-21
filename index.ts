@@ -49,7 +49,7 @@ const redisClient2 = getNewRedisClient();
 redisClient2.connect();
 
 redisClient2.subscribe("configHash", async (m, c) => {
-	await syncData();
+	if (c === "configHash") await syncData();
 });
 wss.on("connection", async (ws) => {
 	console.log("WebSocket connection established");
@@ -59,6 +59,7 @@ wss.on("connection", async (ws) => {
 		console.log("WebSocket connection closed");
 	});
 	redisClient2.subscribe("live", (m, c) => {
+		console.log(m);
 		ws.send(m);
 	});
 });

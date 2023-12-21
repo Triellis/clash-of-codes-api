@@ -5,7 +5,7 @@ import { getDB } from "../../util/db";
 import { getRedisClient } from "../../util/redis";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
-import { replaceFullName } from "../../util/functions";
+import { isValidContestCode, replaceFullName } from "../../util/functions";
 
 export async function getConfig(req: Request, res: Response) {
 	const query = req.query;
@@ -55,6 +55,17 @@ export async function postConfig(req: Request, res: Response) {
 	}
 
 	const contest: ContestCol = body;
+	const contestCode = contest.ContestCode;
+	if (
+		!(await isValidContestCode(
+			contestCode,
+			process.env.GROUP_CODE as string
+		))
+	) {
+		return res
+			.status(400)
+			.send(`${contestCode} is not a valid contest code`);
+	}
 	contest["DateAdded"] = new Date();
 	contest["Live"] = true;
 	const db = getDB();

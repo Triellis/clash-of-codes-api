@@ -10,7 +10,7 @@ import {
 import { Request } from "express";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { getDB } from "./db";
+import { getClient, getDB } from "./db";
 import { getRedisClient } from "./redis";
 
 export async function verifyGoogleToken(
@@ -69,6 +69,29 @@ export function replaceFullName(s: string) {
 	return s;
 }
 
+export async function isValidContestCode(contestId: string, groupCode: string) {
+	const curr_time = Math.floor(new Date().getTime() / 1000);
+	const apiKey = process.env.CF_API_KEY;
+	const secret = process.env.CF_SECRET;
+
+	const signature = crypto
+		.createHash("sha512")
+		.update(
+			`123456/contest.standings?apiKey=${apiKey}&contestId=${contestId}&groupCode=${groupCode}&time=${curr_time}#${secret}`
+		)
+		.digest("hex");
+
+	// return [];
+	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&groupCode=${groupCode}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
+
+	const resp = await fetch(requestUrl);
+	console.log(await resp.json());
+	if (!resp.ok) {
+		return false;
+	}
+	return true;
+}
+
 export async function getScoreFromCF(contestId: number, groupCode: string) {
 	const curr_time = Math.floor(new Date().getTime() / 1000);
 	const apiKey = process.env.CF_API_KEY;
@@ -80,10 +103,24 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 			`123456/contest.standings?apiKey=${apiKey}&contestId=${contestId}&groupCode=${groupCode}&time=${curr_time}#${secret}`
 		)
 		.digest("hex");
+
 	// return [];
 	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&groupCode=${groupCode}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
 
 	const resp = await fetch(requestUrl);
+
+	if (!resp.ok) {
+		const redisClient = getRedisClient();
+		redisClient.sRem("liveContestCodes", String(contestId));
+		const mongoClient = getClient();
+		const db = mongoClient
+			.db("clash-of-codes")
+			.collection<ContestCol>("Contests")
+			.deleteOne({
+				ContestCode: String(contestId),
+			});
+		return [];
+	}
 
 	const data = await resp.json();
 	if (data.status === "FAILED") {
@@ -218,6 +255,9 @@ export async function syncData() {
 	const liveContestCodes = await getLiveContestCodesFromMongo();
 	const redisClient = getRedisClient();
 	redisClient.del("liveContestCodes");
+	if (liveContestCodes.length == 0) {
+		return;
+	}
 	redisClient.sAdd("liveContestCodes", liveContestCodes);
 
 	const cfData = [];
@@ -298,6 +338,9 @@ export async function syncLeaderboardFromCF() {
 			usernames.push(cfData[i][j].username);
 		}
 	}
+	if (usernames.length === 0) {
+		return;
+	}
 
 	const relatedData = await redisClient.hmGet(
 		"usernamesToClanNName",
@@ -331,5 +374,5 @@ export async function syncLeaderboardFromCF() {
 		});
 	});
 
-	await redisClient.publish("Live", JSON.stringify(finalCfData));
+	await redisClient.publish("live", JSON.stringify(finalCfData));
 }
