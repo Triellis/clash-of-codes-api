@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { UserCol, UserOnClientProj } from "../../util/types";
 import { getDB } from "../../util/db";
 import { ObjectId } from "mongodb";
+import { keepTheValidFields } from "../../util/functions";
 
 export async function getUsers(req: Request, res: Response) {
 	const query = req.query;
@@ -55,6 +56,8 @@ export async function deleteUser(req: Request, res: Response) {
 	const id = query.id as string;
 	if (!id) {
 		return res.send("Please provide an id in the query").status(400);
+	} else if (!ObjectId.isValid(id as string)) {
+		return res.send(`${id} is not valid object id`).status(500);
 	}
 
 	const db = getDB();
@@ -66,4 +69,62 @@ export async function deleteUser(req: Request, res: Response) {
 		return res.send("No user found with that id").status(400);
 	}
 	return res.send("User deleted successfully").status(200);
+}
+
+export async function addUser(req: Request, res: Response) {
+	let body = req.body;
+	if (!body) {
+		return res.send("Please provide a body").status(400);
+	}
+	if (!body.name || !body.email || !body.role) {
+		return res
+			.send("Please provide name, email, role and clan in the body")
+			.status(400);
+	}
+
+	body = keepTheValidFields(body, ["name", "email", "role", "clan"]);
+	if (!body.clan) {
+		body.clan = null;
+	}
+	body.createdAt = new Date();
+	body.lastVisit = new Date();
+	body.visits = 0;
+
+	const user: UserCol = body;
+	const db = getDB();
+	const col = db.collection<UserCol>("Users");
+	const insertResult = await col.insertOne(user);
+	if (!insertResult.acknowledged) {
+		return res.send("User not inserted").status(500);
+	}
+	return res.send("User inserted successfully").status(200);
+}
+
+export async function updateUser(req: Request, res: Response) {
+	const body = req.body;
+	if (!body) {
+		return res.send("Please provide a body").status(400);
+	}
+
+	const user: UserCol = body;
+	const db = getDB();
+	const col = db.collection<UserCol>("Users");
+	const updateResult = await col.updateOne(
+		{
+			_id: new ObjectId(user._id),
+		},
+		{
+			$set: {
+				name: user.name,
+				email: user.email,
+				role: user.role,
+				clan: user.clan,
+				cfUsername: user.cfUsername,
+			},
+		}
+	);
+	if (updateResult.modifiedCount === 0) {
+		return res.send("No user found with that id").status(400);
+	}
+	return res.send("User updated successfully").status(200);
 }

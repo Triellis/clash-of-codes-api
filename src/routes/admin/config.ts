@@ -5,7 +5,11 @@ import { getDB } from "../../util/db";
 import { getRedisClient } from "../../util/redis";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
-import { isValidContestCode, replaceFullName } from "../../util/functions";
+import {
+	isValidContestCode,
+	keepTheValidFields,
+	replaceFullName,
+} from "../../util/functions";
 
 export async function getConfig(req: Request, res: Response) {
 	const query = req.query;
@@ -53,8 +57,15 @@ export async function postConfig(req: Request, res: Response) {
 	if (!body) {
 		return res.send("Please provide a body").status(400);
 	}
+	console.log(body);
+	if (!body.ContestCode || !body.Team1 || !body.Team2) {
+		return res
+			.status(400)
+			.send("Please add Team1, Team2 and ContestCode in the body");
+	}
+	const validFields = ["Team1", "Team2", "ContestCode"];
+	const contest: ContestCol = keepTheValidFields(body, validFields);
 
-	const contest: ContestCol = body;
 	const contestCode = contest.ContestCode;
 	if (
 		!(await isValidContestCode(
@@ -69,6 +80,7 @@ export async function postConfig(req: Request, res: Response) {
 	contest["DateAdded"] = new Date();
 	contest["Live"] = true;
 	const db = getDB();
+	console.log(contest);
 	const ak = await db.collection<ContestCol>("Contests").insertOne(contest);
 	if (!ak.acknowledged) {
 		return res.status(500).send();
@@ -86,7 +98,7 @@ export async function postConfig(req: Request, res: Response) {
 export async function deleteConfig(req: Request, res: Response) {
 	const query = req.query;
 	const id = query.id;
-	console.log(query);
+
 	if (!id) {
 		return res.send("Please provide a id in query").status(400);
 	} else if (!ObjectId.isValid(id as string)) {
@@ -119,13 +131,8 @@ export async function updateConfig(req: Request, res: Response) {
 		return res.send("Please provide a body").status(400);
 	}
 	const validUpdateFields = ["Live"];
-	const updatedFields: any = {};
+	const filteredBody = keepTheValidFields(body, validUpdateFields);
 
-	for (let k of Object.keys(body)) {
-		if (validUpdateFields.includes(k)) {
-			updatedFields[k] = body[k];
-		}
-	}
 	const contest: ContestCol = body;
 	const db = getDB();
 	const id = contest._id;
@@ -134,7 +141,7 @@ export async function updateConfig(req: Request, res: Response) {
 		{ _id: new ObjectId(id) },
 		{
 			$set: {
-				...updatedFields,
+				...filteredBody,
 			},
 		}
 	);

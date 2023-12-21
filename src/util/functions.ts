@@ -370,3 +370,15 @@ export async function syncLeaderboardFromCF() {
 
 	await redisClient.publish("live", JSON.stringify(finalCfData));
 }
+
+export function keepTheValidFields(obj: any, validFields: string[]) {
+	const result: any = {};
+
+	Object.keys(obj).forEach((key) => {
+		if (validFields.includes(key)) {
+			result[key] = obj[key];
+		}
+	});
+
+	return result;
+}
