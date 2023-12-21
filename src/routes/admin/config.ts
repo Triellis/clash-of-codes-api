@@ -57,7 +57,7 @@ export async function postConfig(req: Request, res: Response) {
 	if (!body) {
 		return res.send("Please provide a body").status(400);
 	}
-	console.log(body);
+
 	if (!body.ContestCode || !body.Team1 || !body.Team2) {
 		return res
 			.status(400)
@@ -80,7 +80,7 @@ export async function postConfig(req: Request, res: Response) {
 	contest["DateAdded"] = new Date();
 	contest["Live"] = true;
 	const db = getDB();
-	console.log(contest);
+
 	const ak = await db.collection<ContestCol>("Contests").insertOne(contest);
 	if (!ak.acknowledged) {
 		return res.status(500).send();
@@ -104,7 +104,6 @@ export async function deleteConfig(req: Request, res: Response) {
 	} else if (!ObjectId.isValid(id as string)) {
 		return res.send(`${id} is not valid object id`).status(500);
 	}
-	console.log(ObjectId.isValid(id as string));
 
 	const db = getDB();
 	const ak = await db
