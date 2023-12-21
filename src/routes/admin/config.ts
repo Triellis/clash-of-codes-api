@@ -88,10 +88,12 @@ export async function deleteConfig(req: Request, res: Response) {
 	const id = query.id;
 	console.log(query);
 	if (!id) {
-		res.send("Please provide a id in query").status(400);
-	} else if (ObjectId.isValid(id as string)) {
-		res.send(`${id} is not valid object id`).status(500);
+		return res.send("Please provide a id in query").status(400);
+	} else if (!ObjectId.isValid(id as string)) {
+		return res.send(`${id} is not valid object id`).status(500);
 	}
+	console.log(ObjectId.isValid(id as string));
+
 	const db = getDB();
 	const ak = await db
 		.collection("Contests")
