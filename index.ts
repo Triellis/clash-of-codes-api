@@ -51,6 +51,7 @@ redisClient2.connect();
 redisClient2.subscribe("configHash", async (m, c) => {
 	if (c === "configHash") await syncData();
 });
+
 wss.on("connection", async (ws) => {
 	console.log("WebSocket connection established");
 
