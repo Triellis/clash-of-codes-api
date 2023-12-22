@@ -115,7 +115,6 @@ export async function updateUser(req: Request, res: Response) {
 	if (!body) {
 		return res.send("Please provide a body").status(400);
 	}
-
 	const user: UserCol = body;
 	const db = getDB();
 	const col = db.collection<UserCol>("Users");
