@@ -38,3 +38,14 @@ export type CFAPIResponse = {
 	penalty: number;
 	username: string;
 };
+
+type modifiedCFResponse = {
+	name: string;
+	cfUsername: string;
+} & Omit<CFAPIResponse, "username">;
+
+type liveBoardTeam = {
+	[key in Clan]: modifiedCFResponse[];
+};
+
+export type liveLeaderboard = liveBoardTeam[];
