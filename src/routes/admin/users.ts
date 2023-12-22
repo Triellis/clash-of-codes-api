@@ -109,7 +109,6 @@ export async function addUser(req: Request, res: Response) {
 	}
 	return res.send("User inserted successfully").status(200);
 }
-
 export async function updateUser(req: Request, res: Response) {
 	const body = req.body;
 	if (!body) {
