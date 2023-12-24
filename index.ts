@@ -53,7 +53,7 @@ redisClient2.subscribe("configHash", async (m, c) => {
 });
 
 wss.on("connection", async (ws) => {
-	console.log("WebSocket connection established");
+	await syncLeaderboardFromCF(true);
 
 	// Handle WebSocket closure
 	ws.on("close", () => {

@@ -12,6 +12,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { getClient, getDB } from "./db";
 import { getRedisClient } from "./redis";
+import hash from "object-hash";
 
 export async function verifyGoogleToken(
 	token: string
@@ -288,7 +289,7 @@ export async function syncData() {
 		redisClient.hSet("usernamesToClanNName", usernamesToClanNName);
 }
 
-export async function syncLeaderboardFromCF() {
+export async function syncLeaderboardFromCF(forceSend = false) {
 	const redisClient = getRedisClient();
 	const liveContestCodes = await redisClient.sMembers("liveContestCodes");
 	const cfData: CFAPIResponse[][] = [];
@@ -347,7 +348,17 @@ export async function syncLeaderboardFromCF() {
 		});
 	});
 	const rearrangedCFData = rearrangeLeaderboard(finalCfData);
+	const newHash = hash(rearrangedCFData);
 
+	if (!forceSend) {
+		const oldHash = await redisClient.get("leaderboardHash");
+		console.log(oldHash, newHash);
+		if (newHash === oldHash) {
+			return;
+		}
+	}
+	redisClient.set("leaderboardHash", newHash);
+	console.log("sent!");
 	await redisClient.publish("live", JSON.stringify(rearrangedCFData));
 }
 
