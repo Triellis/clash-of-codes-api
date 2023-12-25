@@ -83,6 +83,3 @@ client.on("open", async () => {
 });
 
 client.close();
-
-// const redisClient = getRedisClient();
-// redisClient.disconnect();
