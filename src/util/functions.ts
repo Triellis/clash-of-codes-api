@@ -352,7 +352,7 @@ export async function syncLeaderboardFromCF(forceSend = false) {
 
 	if (!forceSend) {
 		const oldHash = await redisClient.get("leaderboardHash");
-		console.log(oldHash, newHash);
+
 		if (newHash === oldHash) {
 			return;
 		}
