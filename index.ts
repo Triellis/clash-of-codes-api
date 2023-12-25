@@ -53,9 +53,13 @@ redisClient2.subscribe("configHash", async (m, c) => {
 });
 
 wss.on("connection", async (ws) => {
-	await syncLeaderboardFromCF(true);
-
 	// Handle WebSocket closure
+	console.log("WebSocket connection opened");
+	const cachedData = await getRedisClient().get("leaderboard");
+
+	if (cachedData) {
+		ws.send(cachedData);
+	}
 	ws.on("close", () => {
 		console.log("WebSocket connection closed");
 	});

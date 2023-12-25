@@ -289,7 +289,7 @@ export async function syncData() {
 		redisClient.hSet("usernamesToClanNName", usernamesToClanNName);
 }
 
-export async function syncLeaderboardFromCF(forceSend = false) {
+export async function syncLeaderboardFromCF() {
 	const redisClient = getRedisClient();
 	const liveContestCodes = await redisClient.sMembers("liveContestCodes");
 	const cfData: CFAPIResponse[][] = [];
@@ -350,15 +350,15 @@ export async function syncLeaderboardFromCF(forceSend = false) {
 	const rearrangedCFData = rearrangeLeaderboard(finalCfData);
 	const newHash = hash(rearrangedCFData);
 
-	if (!forceSend) {
-		const oldHash = await redisClient.get("leaderboardHash");
+	const oldHash = await redisClient.get("leaderboardHash");
 
-		if (newHash === oldHash) {
-			return;
-		}
+	if (newHash === oldHash) {
+		return;
 	}
+
 	redisClient.set("leaderboardHash", newHash);
-	console.log("sent!");
+	redisClient.set("leaderboard", JSON.stringify(rearrangedCFData));
+
 	await redisClient.publish("live", JSON.stringify(rearrangedCFData));
 }
 
