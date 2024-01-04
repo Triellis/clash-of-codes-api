@@ -43,9 +43,22 @@ type modifiedCFResponse = {
 	name: string;
 	cfUsername: string;
 } & Omit<CFAPIResponse, "username">;
-
+type MetaData = {
+	team1: {
+		team: Clan;
+		name: string;
+	};
+	team2: {
+		team: Clan;
+		name: string;
+	};
+	contestCode: string;
+};
 type liveBoardTeam = {
-	[key in Clan]: modifiedCFResponse[];
+	metaData: MetaData;
+	leaderboardData: {
+		[key in Clan]: modifiedCFResponse[];
+	};
 };
 
 export type liveLeaderboard = liveBoardTeam[];
