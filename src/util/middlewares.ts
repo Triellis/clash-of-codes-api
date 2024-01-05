@@ -33,15 +33,13 @@ export async function auth(req: Request, res: Response, next: NextFunction) {
 	}
 	const token = req.cookies["server_token"];
 	if (!token) {
-		res.status(401).send("unauthorized. no server token found");
-		return;
+		return res.status(401).send("unauthorized. no server token found");
 	}
 
 	const status = await verifyServerToken(token);
 
 	if (!status) {
-		res.status(401).send("unauthorized. invalid token");
-		return;
+		return res.status(401).send("unauthorized. invalid token");
 	}
 
 	// console.log(payload);
