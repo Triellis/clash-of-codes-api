@@ -229,7 +229,6 @@ export async function syncData() {
 	const redisClient = getRedisClient();
 	redisClient.del("liveContestCodes");
 	if (liveContestCodes.length == 0) {
-		redisClient.del("liveContestCodes");
 		return;
 	}
 	redisClient.sAdd("liveContestCodes", liveContestCodes);
@@ -295,8 +294,13 @@ export async function syncLeaderboardFromCF() {
 	const oldLeaderboardHash = await redisClient.get("leaderboardHash");
 
 	const liveContestCodes = await redisClient.sMembers("liveContestCodes");
+
 	if (liveContestCodes.length == 0) {
-		if (oldLeaderboardHash == hash(liveContestCodes)) return;
+		if (oldLeaderboardHash == hash([])) return;
+		redisClient.set("leaderboardHash", hash([]));
+
+		redisClient.set("leaderboard", JSON.stringify([]));
+
 		await redisClient.publish("live", JSON.stringify([]));
 	}
 	const cfData: CFAPIResponse[][] = [];
