@@ -3,7 +3,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import { deleteConfig, getConfig, postConfig, updateConfig } from "./config";
 import { getSession } from "../../util/functions";
 import { addUser, deleteUser, getUsers, updateUser } from "./users";
-import { getCfConfig } from "./cfSecretConfig";
+import { getCfConfig, postCfConfig } from "./cfSecretConfig";
 const router = Router();
 
 async function isAdmin(req: Request) {
@@ -34,5 +34,6 @@ router.post("/users", addUser);
 router.put("/users", updateUser);
 
 router.get("/cfConfig", getCfConfig);
+router.post("/cfConfig", postCfConfig);
 
 export default router;
