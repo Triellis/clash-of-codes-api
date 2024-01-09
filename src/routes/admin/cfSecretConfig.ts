@@ -18,8 +18,11 @@ export async function postCfConfig(req: Request, res: Response) {
 			.status(400);
 	}
 	const redisClient = getRedisClient();
-	await redisClient.set("CF_API_KEY", body.CF_API_KEY);
-	await redisClient.set("CF_SECRET", body.CF_SECRET);
-	await redisClient.set("CF_GROUP_CODE", body.CF_GROUP_CODE);
+	await redisClient.set("CF_API_KEY", (body.CF_API_KEY as string).trim());
+	await redisClient.set("CF_SECRET", (body.CF_SECRET as string).trim());
+	await redisClient.set(
+		"CF_GROUP_CODE",
+		(body.CF_GROUP_CODE as string).trim()
+	);
 	return res.send("Done").status(200);
 }
