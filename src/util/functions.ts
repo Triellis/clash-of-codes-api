@@ -1,6 +1,7 @@
 import { OAuth2Client, TokenPayload } from "google-auth-library";
 import {
 	CFAPIResponse,
+	CFSecretData,
 	Clan,
 	ContestCol,
 	GoogleTokenPayload,
@@ -72,8 +73,9 @@ export function replaceFullName(s: string) {
 
 export async function isValidContestCode(contestId: string, groupCode: string) {
 	const curr_time = Math.floor(new Date().getTime() / 1000);
-	const apiKey = process.env.CF_API_KEY;
-	const secret = process.env.CF_SECRET;
+	const CFSecrets = await getCFSecretData();
+	const apiKey = CFSecrets.CF_API_KEY;
+	const secret = CFSecrets.CF_SECRET;
 
 	const signature = crypto
 		.createHash("sha512")
@@ -95,8 +97,9 @@ export async function isValidContestCode(contestId: string, groupCode: string) {
 
 export async function getScoreFromCF(contestId: number, groupCode: string) {
 	const curr_time = Math.floor(new Date().getTime() / 1000);
-	const apiKey = process.env.CF_API_KEY;
-	const secret = process.env.CF_SECRET;
+	const CFSecrets = await getCFSecretData();
+	const apiKey = CFSecrets.CF_API_KEY;
+	const secret = CFSecrets.CF_SECRET;
 
 	const signature = crypto
 		.createHash("sha512")
@@ -234,12 +237,11 @@ export async function syncData() {
 	redisClient.sAdd("liveContestCodes", liveContestCodes);
 
 	const cfData = [];
+	const CFSecrets = await getCFSecretData();
+	const groupCode = CFSecrets.CF_GROUP_CODE;
 	for (let i = 0; i < liveContestCodes.length; i++) {
 		const contestCode = liveContestCodes[i];
-		const data = await getScoreFromCF(
-			Number(contestCode),
-			process.env.GROUP_CODE as string
-		);
+		const data = await getScoreFromCF(Number(contestCode), groupCode);
 		if (data.length == 0) {
 			continue;
 		}
@@ -304,13 +306,12 @@ export async function syncLeaderboardFromCF() {
 		await redisClient.publish("live", JSON.stringify([]));
 	}
 	const cfData: CFAPIResponse[][] = [];
+	const CFSecrets = await getCFSecretData();
+	const groupCode = CFSecrets.CF_GROUP_CODE;
 
 	for (let i = 0; i < liveContestCodes.length; i++) {
 		const contestCode = liveContestCodes[i];
-		const data = await getScoreFromCF(
-			Number(contestCode),
-			process.env.GROUP_CODE as string
-		);
+		const data = await getScoreFromCF(Number(contestCode), groupCode);
 		if (data.length == 0) {
 			continue;
 		}
@@ -381,4 +382,23 @@ export function keepTheValidFields(obj: any, validFields: string[]) {
 	});
 
 	return result;
+}
+
+export async function getCFSecretData(): Promise<CFSecretData> {
+	const redisClient = getRedisClient();
+
+	const CF_API_KEY = await redisClient.get("CF_API_KEY");
+	const CF_SECRET = await redisClient.get("CF_SECRET");
+	const CF_GROUP_CODE = await redisClient.get("CF_GROUP_CODE");
+
+	if (!CF_API_KEY || !CF_GROUP_CODE || !CF_SECRET) {
+		throw new Error(
+			"The CF_API_KEY, CF_SECRET, CF_GROUP_CODE are not defined on the redis  "
+		);
+	}
+	return {
+		CF_API_KEY,
+		CF_SECRET,
+		CF_GROUP_CODE,
+	};
 }

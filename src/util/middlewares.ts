@@ -1,6 +1,6 @@
 import { NextFunction } from "express";
 import { Request, Response } from "express";
-import { verifyServerToken } from "./functions";
+import { getCFSecretData, verifyServerToken } from "./functions";
 import cookie from "cookie";
 const envList = [
 	"GOOGLE_CLIENT_SECRET",
@@ -9,10 +9,7 @@ const envList = [
 	"JWT_SECRET",
 	"REDIS_PASS",
 	"REDIS_HOST",
-	"CF_API_KEY",
-	"CF_SECRET",
 	"MAX_RESULTS",
-	"GROUP_CODE",
 ];
 
 export function verifyEnv() {
@@ -24,6 +21,7 @@ export function verifyEnv() {
 			`Missing environment variables: ${missingEnvVariables.join(", ")}`
 		);
 	}
+	getCFSecretData();
 }
 
 export async function auth(req: Request, res: Response, next: NextFunction) {
