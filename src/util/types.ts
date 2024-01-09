@@ -49,3 +49,9 @@ type liveBoardTeam = {
 };
 
 export type liveLeaderboard = liveBoardTeam[];
+
+export type CFSecretData = {
+	CF_API_KEY: string;
+	CF_SECRET: string;
+	CF_GROUP_CODE: string;
+};

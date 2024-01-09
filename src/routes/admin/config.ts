@@ -6,6 +6,7 @@ import { getRedisClient } from "../../util/redis";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
 import {
+	getCFSecretData,
 	isValidContestCode,
 	keepTheValidFields,
 	replaceFullName,
@@ -67,10 +68,12 @@ export async function postConfig(req: Request, res: Response) {
 	const contest: ContestCol = keepTheValidFields(body, validFields);
 
 	const contestCode = contest.ContestCode;
+	const CFSecrets = await getCFSecretData();
+
 	if (
 		!(await isValidContestCode(
 			contestCode,
-			process.env.GROUP_CODE as string
+			CFSecrets.CF_GROUP_CODE as string
 		))
 	) {
 		return res
