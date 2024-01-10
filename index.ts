@@ -15,7 +15,11 @@ import router from "./src/routes";
 import bodyParser from "body-parser";
 import ws from "ws";
 import http from "http";
-import { syncData, syncLeaderboardFromCF } from "./src/util/functions";
+import {
+	getCustomRating,
+	syncData,
+	syncLeaderboardFromCF,
+} from "./src/util/functions";
 
 const app = express();
 const port = 3001;
@@ -73,6 +77,7 @@ const client = getClient();
 client.on("open", async () => {
 	verifyEnv();
 	await syncData();
+	console.log(await getCustomRating(436364));
 
 	setInterval(async () => {
 		await syncLeaderboardFromCF();

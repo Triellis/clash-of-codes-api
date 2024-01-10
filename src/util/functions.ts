@@ -373,3 +373,26 @@ export function keepTheValidFields(obj: any, validFields: string[]) {
 
 	return result;
 }
+
+export async function getCFSecretData(): Promise<CFSecretData> {
+	const redisClient = getRedisClient();
+
+	const CF_API_KEY = await redisClient.get("CF_API_KEY");
+	const CF_SECRET = await redisClient.get("CF_SECRET");
+	const CF_GROUP_CODE = await redisClient.get("CF_GROUP_CODE");
+
+	if (!CF_API_KEY || !CF_GROUP_CODE || !CF_SECRET) {
+		throw new Error(
+			"The CF_API_KEY, CF_SECRET, CF_GROUP_CODE are not defined on the redis  "
+		);
+	}
+	return {
+		CF_API_KEY,
+		CF_SECRET,
+		CF_GROUP_CODE,
+	};
+}
+
+export async function getCustomRating(contestId: number) {
+	// formula R = (200) * ((n - place + 1)/n) * (solved / maxSolved) + 100 *(upsolved / problemCount)
+}
