@@ -406,4 +406,5 @@ export async function getCFSecretData(): Promise<CFSecretData> {
 
 export async function getCustomRating(contestId: number) {
 	// formula R = (200) * ((n - place + 1)/n) * (solved / maxSolved) + 100 *(upsolved / problemCount)
+	// n — maximum of 50 and number of contest participants
 }
