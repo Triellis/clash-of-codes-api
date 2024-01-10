@@ -1,18 +1,19 @@
+import crypto from "crypto";
+import { Request } from "express";
 import { OAuth2Client, TokenPayload } from "google-auth-library";
+import jwt from "jsonwebtoken";
+import hash from "object-hash";
+import { getClient, getDB } from "./db";
+import { getRedisClient } from "./redis";
 import {
 	CFAPIResponse,
+	CFSecretData,
 	Clan,
 	ContestCol,
 	GoogleTokenPayload,
 	UserCol,
 	UserOnClient,
 } from "./types";
-import { Request } from "express";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
-import { getClient, getDB } from "./db";
-import { getRedisClient } from "./redis";
-import hash from "object-hash";
 
 export async function verifyGoogleToken(
 	token: string
@@ -72,8 +73,9 @@ export function replaceFullName(s: string) {
 
 export async function isValidContestCode(contestId: string, groupCode: string) {
 	const curr_time = Math.floor(new Date().getTime() / 1000);
-	const apiKey = process.env.CF_API_KEY;
-	const secret = process.env.CF_SECRET;
+	const CFSecrets = await getCFSecretData();
+	const apiKey = CFSecrets.CF_API_KEY;
+	const secret = CFSecrets.CF_SECRET;
 
 	const signature = crypto
 		.createHash("sha512")
@@ -84,6 +86,7 @@ export async function isValidContestCode(contestId: string, groupCode: string) {
 
 	// return [];
 	const requestUrl = `https://codeforces.com/api/contest.standings?contestId=${contestId}&groupCode=${groupCode}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
+	// const requestUrl = `https://codeforces.com/api/groupCode=${groupCode}&customRating=${6094}&apiKey=${apiKey}&time=${curr_time}&apiSig=123456${signature}`;
 
 	const resp = await fetch(requestUrl);
 
@@ -95,8 +98,9 @@ export async function isValidContestCode(contestId: string, groupCode: string) {
 
 export async function getScoreFromCF(contestId: number, groupCode: string) {
 	const curr_time = Math.floor(new Date().getTime() / 1000);
-	const apiKey = process.env.CF_API_KEY;
-	const secret = process.env.CF_SECRET;
+	const CFSecrets = await getCFSecretData();
+	const apiKey = CFSecrets.CF_API_KEY;
+	const secret = CFSecrets.CF_SECRET;
 
 	const signature = crypto
 		.createHash("sha512")
@@ -234,12 +238,11 @@ export async function syncData() {
 	redisClient.sAdd("liveContestCodes", liveContestCodes);
 
 	const cfData = [];
+	const CFSecrets = await getCFSecretData();
+	const groupCode = CFSecrets.CF_GROUP_CODE;
 	for (let i = 0; i < liveContestCodes.length; i++) {
 		const contestCode = liveContestCodes[i];
-		const data = await getScoreFromCF(
-			Number(contestCode),
-			process.env.GROUP_CODE as string
-		);
+		const data = await getScoreFromCF(Number(contestCode), groupCode);
 		if (data.length == 0) {
 			continue;
 		}
@@ -291,15 +294,25 @@ export async function syncData() {
 
 export async function syncLeaderboardFromCF() {
 	const redisClient = getRedisClient();
+	const oldLeaderboardHash = await redisClient.get("leaderboardHash");
+
 	const liveContestCodes = await redisClient.sMembers("liveContestCodes");
+
+	if (liveContestCodes.length == 0) {
+		if (oldLeaderboardHash == hash([])) return;
+		redisClient.set("leaderboardHash", hash([]));
+
+		redisClient.set("leaderboard", JSON.stringify([]));
+
+		await redisClient.publish("live", JSON.stringify([]));
+	}
 	const cfData: CFAPIResponse[][] = [];
+	const CFSecrets = await getCFSecretData();
+	const groupCode = CFSecrets.CF_GROUP_CODE;
 
 	for (let i = 0; i < liveContestCodes.length; i++) {
 		const contestCode = liveContestCodes[i];
-		const data = await getScoreFromCF(
-			Number(contestCode),
-			process.env.GROUP_CODE as string
-		);
+		const data = await getScoreFromCF(Number(contestCode), groupCode);
 		if (data.length == 0) {
 			continue;
 		}
@@ -350,9 +363,7 @@ export async function syncLeaderboardFromCF() {
 	const rearrangedCFData = rearrangeLeaderboard(finalCfData);
 	const newHash = hash(rearrangedCFData);
 
-	const oldHash = await redisClient.get("leaderboardHash");
-
-	if (newHash === oldHash) {
+	if (newHash === oldLeaderboardHash) {
 		return;
 	}
 

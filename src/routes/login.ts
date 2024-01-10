@@ -7,8 +7,8 @@ export default async function login(req: Request, res: Response) {
 	const token = req.cookies["google_token"];
 
 	if (!token) {
-		res.status(401).send("unauthorized. no token found");
-		return;
+		return res.status(401).send("unauthorized. no token found");
+		
 	}
 	const payload = await verifyGoogleToken(token);
 	if (payload === 401) {
