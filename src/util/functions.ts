@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import hash from "object-hash";
 import { getClient, getDB } from "./db";
 import { getRedisClient } from "./redis";
+
 import {
 	CFAPIResponse,
 	CFSecretData,
@@ -404,7 +405,34 @@ export async function getCFSecretData(): Promise<CFSecretData> {
 	};
 }
 
-export async function getCustomRating(contestId: number) {
+type RatingData = {
+	username: string;
+	rating: number;
+}[];
+
+export async function getCustomRating(contestId: number, groupCode: string) {
+	const cfData = await getScoreFromCF(contestId, groupCode);
+	const ratingData: RatingData = [];
+	console.log(cfData);
 	// formula R = (200) * ((n - place + 1)/n) * (solved / maxSolved) + 100 *(upsolved / problemCount)
 	// n — maximum of 50 and number of contest participants
+	const n = Math.max(50, cfData.length);
+	let maxSolved = 0;
+	cfData.forEach((a) => {
+		maxSolved = Math.max(maxSolved, a.points);
+	});
+	cfData.forEach((a) => {
+		const solved = a.points;
+		const place = a.rank;
+		const username = a.username;
+		const rating =
+			Math.round(
+				200 * ((n - place + 1) / n) * (solved / maxSolved) * 100
+			) / 100;
+		ratingData.push({
+			username,
+			rating,
+		});
+	});
+	return ratingData;
 }

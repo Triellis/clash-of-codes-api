@@ -77,7 +77,7 @@ const client = getClient();
 client.on("open", async () => {
 	verifyEnv();
 	await syncData();
-	console.log(await getCustomRating(436364));
+	console.log(await getCustomRating(436414, "RXDkSayhcX"));
 
 	setInterval(async () => {
 		await syncLeaderboardFromCF();
