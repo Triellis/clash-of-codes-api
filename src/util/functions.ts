@@ -12,8 +12,10 @@ import {
 	Clan,
 	ContestCol,
 	GoogleTokenPayload,
+	RatingData,
 	UserCol,
 	UserOnClient,
+	ProcessedRatingData,
 } from "./types";
 
 export async function verifyGoogleToken(
@@ -405,15 +407,10 @@ export async function getCFSecretData(): Promise<CFSecretData> {
 	};
 }
 
-type RatingData = {
-	username: string;
-	rating: number;
-}[];
-
 export async function getCustomRating(contestId: number, groupCode: string) {
 	const cfData = await getScoreFromCF(contestId, groupCode);
 	const ratingData: RatingData = [];
-	console.log(cfData);
+
 	// formula R = (200) * ((n - place + 1)/n) * (solved / maxSolved) + 100 *(upsolved / problemCount)
 	// n — maximum of 50 and number of contest participants
 	const n = Math.max(50, cfData.length);
@@ -435,4 +432,60 @@ export async function getCustomRating(contestId: number, groupCode: string) {
 		});
 	});
 	return ratingData;
+}
+
+export async function formatRatingLeaderboard(ratingData: RatingData) {
+	const usernames: string[] = [];
+	ratingData.forEach((a) => {
+		usernames.push(a.username);
+	});
+	const relatedData = await getDB()
+		.collection<UserCol>("Users")
+		.find(
+			{
+				cfUsername: {
+					$in: usernames,
+				},
+			},
+			{
+				projection: {
+					cfUsername: 1,
+					clan: 1,
+					name: 1,
+				},
+			}
+		)
+		.toArray();
+	const clans: Clan[] = [];
+	relatedData.forEach((a) => {
+		if (clans.includes(a.clan!)) return;
+		clans.push(a.clan!);
+	});
+	const processedData: ProcessedRatingData = {};
+	clans.forEach((clan) => {
+		processedData[clan] = [];
+	});
+	relatedData.forEach((a) => {
+		const clan = a.clan!;
+		const name = a.name!;
+		const cfUsername = a.cfUsername!;
+		const rating = ratingData.find((b) => {
+			return b.username === cfUsername;
+		})!.rating;
+		if (!processedData[clan]) {
+			processedData[clan] = [];
+		}
+		processedData[clan]!.push({
+			name,
+			cfUsername,
+			rating,
+		});
+	});
+	for (const clan in processedData) {
+		processedData[clan as Clan]!.sort((a, b) => {
+			return b.rating - a.rating;
+		});
+	}
+
+	return processedData;
 }

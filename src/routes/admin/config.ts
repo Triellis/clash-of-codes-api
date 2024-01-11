@@ -1,12 +1,14 @@
 import { Request, Response } from "express";
 
-import { ContestCol } from "../../util/types";
+import { ContestCol, PastScoresCol } from "../../util/types";
 import { getDB } from "../../util/db";
 import { getRedisClient } from "../../util/redis";
 import crypto from "crypto";
 import { ObjectId } from "mongodb";
 import {
+	formatRatingLeaderboard,
 	getCFSecretData,
+	getCustomRating,
 	isValidContestCode,
 	keepTheValidFields,
 	replaceFullName,
@@ -113,6 +115,10 @@ export async function deleteConfig(req: Request, res: Response) {
 		.collection("Contests")
 		.deleteOne({ _id: new ObjectId(id as string) });
 
+	await db.collection<PastScoresCol>("PastScores").deleteOne({
+		contestId: new ObjectId(id as string),
+	});
+
 	if (!ak.acknowledged) {
 		return res.status(500).send();
 	}
@@ -155,6 +161,25 @@ export async function updateConfig(req: Request, res: Response) {
 		.createHash("sha256")
 		.update(JSON.stringify(contest) + new Date().getTime().toString())
 		.digest("hex");
+	if (contest.Live == false) {
+		const contestCode = contest.ContestCode;
+		const CFSecretData = await getCFSecretData();
+		const groupCode = CFSecretData.CF_GROUP_CODE;
+		const ratedData = await formatRatingLeaderboard(
+			await getCustomRating(Number(contestCode), groupCode)
+		);
+		const docToAdd: PastScoresCol = {
+			dateAdded: new Date(),
+			contestId: new ObjectId(id),
+			...ratedData,
+		};
+		await db.collection<PastScoresCol>("PastScores").insertOne(docToAdd);
+	} else {
+		await db.collection<PastScoresCol>("PastScores").deleteOne({
+			contestId: new ObjectId(id),
+		});
+	}
+
 	const redisClient = getRedisClient();
 	await redisClient.publish("configHash", hash);
 

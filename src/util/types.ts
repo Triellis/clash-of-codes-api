@@ -15,8 +15,8 @@ export interface ContestCol {
 
 export type UserCol = {
 	_id?: ObjectId;
-	name: String;
-	email: String;
+	name: string;
+	email: string;
 	role: "User" | "Admin" | "Elder" | "Member" | "Leader" | "CoLeader";
 	clan: null | Clan;
 	visits: number;
@@ -68,3 +68,18 @@ export type CFSecretData = {
 	CF_SECRET: string;
 	CF_GROUP_CODE: string;
 };
+export type RatingData = {
+	username: string;
+	rating: number;
+}[];
+export type ProcessedRatingData = {
+	[key in Clan]?: {
+		name: string;
+		cfUsername: string;
+		rating: number;
+	}[];
+};
+export type PastScoresCol = {
+	dateAdded: Date;
+	contestId: ObjectId;
+} & ProcessedRatingData;

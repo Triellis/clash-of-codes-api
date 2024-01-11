@@ -16,6 +16,7 @@ import bodyParser from "body-parser";
 import ws from "ws";
 import http from "http";
 import {
+	formatRatingLeaderboard,
 	getCustomRating,
 	syncData,
 	syncLeaderboardFromCF,
@@ -76,8 +77,6 @@ wss.on("connection", async (ws) => {
 const client = getClient();
 client.on("open", async () => {
 	verifyEnv();
-	await syncData();
-	console.log(await getCustomRating(436414, "RXDkSayhcX"));
 
 	setInterval(async () => {
 		await syncLeaderboardFromCF();
