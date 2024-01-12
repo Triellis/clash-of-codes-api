@@ -22,7 +22,7 @@ export default async function getPastScores(req: Request, res: Response) {
 		)
 		.project({
 			_id: 0,
-			dateAdded: 0,
+
 			contestId: 0,
 		})
 		.skip(skip)
