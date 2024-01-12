@@ -25,8 +25,7 @@ export function verifyEnv() {
 }
 
 export async function auth(req: Request, res: Response, next: NextFunction) {
-	const bypassAuthPaths = ["/login", "/pastScores"];
-	if (bypassAuthPaths.includes(req.path)) {
+	if (req.path === "/login") {
 		next();
 		return;
 	}
@@ -47,6 +46,10 @@ export async function auth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function authToCookie(req: Request, res: Response, next: NextFunction) {
+	if (req.path === "/pastScores") {
+		next();
+		return;
+	}
 	if (!req.headers.auth) {
 		return res.status(401).send("you must provide auth header");
 	}
