@@ -143,7 +143,7 @@ export async function getScoreFromCF(contestId: number, groupCode: string) {
 
 		return result as CFAPIResponse[];
 	} catch (e) {
-		console.error(e);
+		console.log(e);
 		return [];
 	}
 	// await redisClient.set("leaderboard", JSON.stringify(data));
