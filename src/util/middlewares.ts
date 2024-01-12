@@ -25,7 +25,8 @@ export function verifyEnv() {
 }
 
 export async function auth(req: Request, res: Response, next: NextFunction) {
-	if (req.path === "/login") {
+	const bypassAuthPaths = ["/login", "/pastScores"];
+	if (bypassAuthPaths.includes(req.path)) {
 		next();
 		return;
 	}
