@@ -71,12 +71,14 @@ export type CFSecretData = {
 export type RatingData = {
 	username: string;
 	rating: number;
+	points: number;
 }[];
 export type ProcessedRatingData = {
 	[key in Clan]?: {
 		name: string;
 		cfUsername: string;
 		rating: number;
+		points: number;
 	}[];
 };
 export type PastScoresCol = {

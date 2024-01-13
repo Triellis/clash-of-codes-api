@@ -25,7 +25,8 @@ export function verifyEnv() {
 }
 
 export async function auth(req: Request, res: Response, next: NextFunction) {
-	if (req.path === "/login") {
+	const byPassPaths = ["/login", "/PastScores"];
+	if (byPassPaths.includes(req.path)) {
 		next();
 		return;
 	}
@@ -46,7 +47,7 @@ export async function auth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function authToCookie(req: Request, res: Response, next: NextFunction) {
-	if (req.path === "/pastScores") {
+	if (req.path === "/PastScores") {
 		next();
 		return;
 	}

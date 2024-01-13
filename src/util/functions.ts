@@ -430,6 +430,7 @@ export async function getCustomRating(contestId: number, groupCode: string) {
 		ratingData.push({
 			username,
 			rating,
+			points: solved,
 		});
 	});
 	return ratingData;
@@ -470,6 +471,9 @@ export async function formatRatingLeaderboard(ratingData: RatingData) {
 		const clan = a.clan!;
 		const name = a.name!;
 		const cfUsername = a.cfUsername!;
+		const points = ratingData.find((b) => {
+			return b.username === cfUsername;
+		})!.points;
 		const rating = ratingData.find((b) => {
 			return b.username === cfUsername;
 		})!.rating;
@@ -480,6 +484,7 @@ export async function formatRatingLeaderboard(ratingData: RatingData) {
 			name,
 			cfUsername,
 			rating,
+			points,
 		});
 	});
 	for (const clan in processedData) {
