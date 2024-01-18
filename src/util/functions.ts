@@ -266,10 +266,11 @@ export async function syncData() {
 	const col = db.collection<UserCol>("Users");
 	// console.log(usernamesToHash);
 	const users = await col
+		// where clan not equal to null
 		.find(
 			{
-				cfUsername: {
-					$in: usernamesToHash,
+				clan: {
+					$ne: null,
 				},
 			},
 			{
