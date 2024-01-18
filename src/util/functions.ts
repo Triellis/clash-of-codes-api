@@ -317,7 +317,10 @@ export async function syncLeaderboardFromCF() {
 	for (let i = 0; i < liveContestCodes.length; i++) {
 		const contestCode = liveContestCodes[i];
 		const data = await getScoreFromCF(Number(contestCode), groupCode);
+		await sleep(1500);
+		console.log(i);
 		if (data.length == 0) {
+			console.log("skipped");
 			continue;
 		}
 		cfData.push(data);
@@ -494,4 +497,7 @@ export async function formatRatingLeaderboard(ratingData: RatingData) {
 	}
 
 	return processedData;
+}
+function sleep(ms: number) {
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
