@@ -318,7 +318,7 @@ export async function syncLeaderboardFromCF() {
 		const contestCode = liveContestCodes[i];
 		const data = await getScoreFromCF(Number(contestCode), groupCode);
 		await sleep(1500);
-		console.log(i);
+
 		if (data.length == 0) {
 			console.log("skipped");
 			continue;
