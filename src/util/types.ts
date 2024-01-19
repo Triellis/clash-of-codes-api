@@ -24,7 +24,7 @@ export type UserCol = {
 	lastVisit: Date;
 	cfUsername?: string;
 	score?: number;
-	questionSolved?: number;
+	problemSolved?: number;
 };
 
 export type UserOnClient = Omit<UserCol, "visits" | "createdAt" | "lastVisit">;

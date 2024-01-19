@@ -147,8 +147,8 @@ export async function deleteConfig(req: Request, res: Response) {
 				},
 				update: {
 					$inc: {
-						rating: -data.rating,
-						points: -data.points,
+						score: -data.rating,
+						problemSolved: -data.points,
 					},
 				},
 			},
@@ -220,8 +220,8 @@ export async function updateConfig(req: Request, res: Response) {
 					},
 					update: {
 						$inc: {
-							rating: data.rating,
-							points: data.points,
+							score: data.rating,
+							problemSolved: data.points,
 						},
 					},
 				},
@@ -272,8 +272,8 @@ export async function updateConfig(req: Request, res: Response) {
 					},
 					update: {
 						$inc: {
-							rating: -data.rating,
-							points: -data.points,
+							score: -data.rating,
+							problemSolved: -data.points,
 						},
 					},
 				},
