@@ -144,6 +144,7 @@ export async function updateConfig(req: Request, res: Response) {
 	const contest: ContestCol = body;
 	const db = getDB();
 	const id = contest._id;
+	contest.DateAdded = new Date(contest.DateAdded);
 	delete contest["_id"];
 	const ak = await db.collection<ContestCol>("Contests").updateOne(
 		{ _id: new ObjectId(id) },
@@ -169,7 +170,7 @@ export async function updateConfig(req: Request, res: Response) {
 			await getCustomRating(Number(contestCode), groupCode)
 		);
 		const docToAdd: PastScoresCol = {
-			dateAdded: new Date(),
+			dateAdded: contest.DateAdded,
 			contestId: new ObjectId(id),
 			...ratedData,
 		};
