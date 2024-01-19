@@ -20,6 +20,9 @@ export async function getClans(req: Request, res: Response) {
 					totalScore: {
 						$sum: "$score",
 					},
+					totalProblemSolved: {
+						$sum: "$problemSolved",
+					},
 				},
 			},
 		])
@@ -31,6 +34,7 @@ export async function getClans(req: Request, res: Response) {
 		processedClanData.push({
 			clanName: clan._id,
 			totalScore: clan.totalScore,
+			totalProblemSolved: clan.totalProblemSolved,
 		});
 	}
 
