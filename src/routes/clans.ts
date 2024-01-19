@@ -38,6 +38,8 @@ export async function getClans(req: Request, res: Response) {
 		});
 	}
 
-	processedClanData.sort((a, b) => b.totalScore - a.totalScore);
+	processedClanData.sort(
+		(a, b) => b.totalProblemSolved - a.totalProblemSolved
+	);
 	return res.json(processedClanData);
 }
