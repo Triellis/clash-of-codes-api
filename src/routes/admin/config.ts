@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 
-import { ContestCol, PastScoresCol } from "../../util/types";
+import { ContestCol, PastScoresCol, RatingData } from "../../util/types";
 import { getDB } from "../../util/db";
 import { getRedisClient } from "../../util/redis";
 import crypto from "crypto";
@@ -114,6 +114,48 @@ export async function deleteConfig(req: Request, res: Response) {
 	const ak = await db
 		.collection("Contests")
 		.deleteOne({ _id: new ObjectId(id as string) });
+	const pastScoreDoc = await db
+		.collection<PastScoresCol>("PastScores")
+		.findOne(
+			{
+				contestId: new ObjectId(id as string),
+			},
+			{
+				projection: {
+					_id: 0,
+					dateAdded: 0,
+					contestId: 0,
+				},
+			}
+		);
+
+	const pastScoreData: RatingData[] = Object.values(pastScoreDoc as any);
+	let customRatingData = [];
+	for (let i = 0; i < pastScoreData.length; i++) {
+		for (let j = 0; j < pastScoreData[i].length; j++) {
+			customRatingData.push(pastScoreData[i][j]);
+		}
+	}
+	customRatingData = customRatingData.map((d: any) => {
+		return { ...d, username: d.cfUsername };
+	});
+	const bulkWriteData = customRatingData.map((data) => {
+		return {
+			updateOne: {
+				filter: {
+					cfUsername: data.username,
+				},
+				update: {
+					$inc: {
+						rating: -data.rating,
+						points: -data.points,
+					},
+				},
+			},
+		};
+	});
+
+	await db.collection("Users").bulkWrite(bulkWriteData, { ordered: false });
 
 	await db.collection<PastScoresCol>("PastScores").deleteOne({
 		contestId: new ObjectId(id as string),
@@ -166,9 +208,30 @@ export async function updateConfig(req: Request, res: Response) {
 		const contestCode = contest.ContestCode;
 		const CFSecretData = await getCFSecretData();
 		const groupCode = CFSecretData.CF_GROUP_CODE;
-		const ratedData = await formatRatingLeaderboard(
-			await getCustomRating(Number(contestCode), groupCode)
+		const customRating = await getCustomRating(
+			Number(contestCode),
+			groupCode
 		);
+		const bulkWriteData = customRating.map((data) => {
+			return {
+				updateOne: {
+					filter: {
+						cfUsername: data.username,
+					},
+					update: {
+						$inc: {
+							rating: data.rating,
+							points: data.points,
+						},
+					},
+				},
+			};
+		});
+		await db
+			.collection("Users")
+			.bulkWrite(bulkWriteData, { ordered: false });
+		const ratedData = await formatRatingLeaderboard(customRating);
+
 		const docToAdd: PastScoresCol = {
 			dateAdded: contest.DateAdded,
 			contestId: new ObjectId(id),
@@ -176,6 +239,51 @@ export async function updateConfig(req: Request, res: Response) {
 		};
 		await db.collection<PastScoresCol>("PastScores").insertOne(docToAdd);
 	} else {
+		const pastScoreDoc = await db
+			.collection<PastScoresCol>("PastScores")
+			.findOne(
+				{
+					contestId: new ObjectId(id),
+				},
+				{
+					projection: {
+						_id: 0,
+						dateAdded: 0,
+						contestId: 0,
+					},
+				}
+			);
+
+		const pastScoreData: RatingData[] = Object.values(pastScoreDoc as any);
+		let customRatingData = [];
+		for (let i = 0; i < pastScoreData.length; i++) {
+			for (let j = 0; j < pastScoreData[i].length; j++) {
+				customRatingData.push(pastScoreData[i][j]);
+			}
+		}
+		customRatingData = customRatingData.map((d: any) => {
+			return { ...d, username: d.cfUsername };
+		});
+		const bulkWriteData = customRatingData.map((data) => {
+			return {
+				updateOne: {
+					filter: {
+						cfUsername: data.username,
+					},
+					update: {
+						$inc: {
+							rating: -data.rating,
+							points: -data.points,
+						},
+					},
+				},
+			};
+		});
+
+		await db
+			.collection("Users")
+			.bulkWrite(bulkWriteData, { ordered: false });
+
 		await db.collection<PastScoresCol>("PastScores").deleteOne({
 			contestId: new ObjectId(id),
 		});
