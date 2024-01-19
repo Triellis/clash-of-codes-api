@@ -47,7 +47,7 @@ export async function auth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function authToCookie(req: Request, res: Response, next: NextFunction) {
-	const byPassPaths = ["/login", "/PastScores", "/clans"];
+	const byPassPaths = ["/PastScores", "/clans"];
 
 	if (byPassPaths.includes(req.path)) {
 		next();
