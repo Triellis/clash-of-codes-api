@@ -10,6 +10,7 @@ const envList = [
 	"REDIS_PASS",
 	"REDIS_HOST",
 	"MAX_RESULTS",
+	"GEMINI_API",
 ];
 
 export function verifyEnv() {

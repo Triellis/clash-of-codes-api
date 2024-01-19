@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { getClient } from "../util/db";
 import { UserCol } from "../util/types";
 
-export async function getClans(req: Request, res: Response) {
+export async function getClanScores() {
 	const client = getClient();
 	const db = client.db("clash-of-codes");
 	const users = db.collection<UserCol>("Users");
@@ -41,5 +41,9 @@ export async function getClans(req: Request, res: Response) {
 	processedClanData.sort(
 		(a, b) => b.totalProblemSolved - a.totalProblemSolved
 	);
-	return res.json(processedClanData);
+	return processedClanData;
+}
+
+export async function getClans(req: Request, res: Response) {
+	return res.json(await getClanScores());
 }
