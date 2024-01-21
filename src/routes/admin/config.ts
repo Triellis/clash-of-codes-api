@@ -25,17 +25,10 @@ export async function getConfig(req: Request, res: Response) {
 	const db = getDB();
 	const col = db.collection<ContestCol>("Contests");
 	const searchRegex = new RegExp(searchQuery, "i");
-	const teamRegex = new RegExp(replaceFullName(searchQuery), "i");
 	const configData = await col
 		.find(
 			{
 				$or: [
-					{
-						Team1: teamRegex,
-					},
-					{
-						Team2: teamRegex,
-					},
 					{
 						ContestCode: searchRegex,
 					},
@@ -61,12 +54,10 @@ export async function postConfig(req: Request, res: Response) {
 		return res.send("Please provide a body").status(400);
 	}
 
-	if (!body.ContestCode || !body.Team1 || !body.Team2) {
-		return res
-			.status(400)
-			.send("Please add Team1, Team2 and ContestCode in the body");
+	if (!body.ContestCode) {
+		return res.status(400).send("Please add ContestCode in the body");
 	}
-	const validFields = ["Team1", "Team2", "ContestCode"];
+	const validFields = ["ContestCode"];
 	const contest: ContestCol = keepTheValidFields(body, validFields);
 
 	const contestCode = contest.ContestCode;
