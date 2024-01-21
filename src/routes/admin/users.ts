@@ -3,6 +3,8 @@ import { UserCol, UserOnClientProj } from "../../util/types";
 import { getDB } from "../../util/db";
 import { ObjectId } from "mongodb";
 import { keepTheValidFields } from "../../util/functions";
+import { getRedisClient } from "../../util/redis";
+import { MD5 } from "object-hash";
 
 export async function getUsers(req: Request, res: Response) {
 	const query = req.query;
@@ -68,6 +70,7 @@ export async function deleteUser(req: Request, res: Response) {
 	if (deleteResult.deletedCount === 0) {
 		return res.send("No user found with that id").status(400);
 	}
+
 	return res.send("User deleted successfully").status(200);
 }
 
@@ -107,6 +110,8 @@ export async function addUser(req: Request, res: Response) {
 	if (!insertResult.acknowledged) {
 		return res.send("User not inserted").status(500);
 	}
+	const redisClient = getRedisClient();
+	await redisClient.publish("configHash", MD5(new Date()));
 	return res.send("User inserted successfully").status(200);
 }
 export async function updateUser(req: Request, res: Response) {
@@ -143,5 +148,7 @@ export async function updateUser(req: Request, res: Response) {
 	if (!updateResult.acknowledged) {
 		return res.send("No user found with that id").status(400);
 	}
+	const redisClient = getRedisClient();
+	await redisClient.publish("configHash", MD5(new Date()));
 	return res.send("User updated successfully").status(200);
 }
