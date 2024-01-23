@@ -4,6 +4,7 @@ import { deleteConfig, getConfig, postConfig, updateConfig } from "./config";
 import { getSession } from "../../util/functions";
 import { addUser, deleteUser, getUsers, updateUser } from "./users";
 import { getCfConfig, postCfConfig } from "./cfSecretConfig";
+import { postTimer } from "./timer";
 const router = Router();
 
 async function isAdmin(req: Request) {
@@ -35,5 +36,7 @@ router.put("/users", updateUser);
 
 router.get("/cfConfig", getCfConfig);
 router.post("/cfConfig", postCfConfig);
+
+router.post("/timer", postTimer);
 
 export default router;
