@@ -503,7 +503,6 @@ function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 export function includesOrStartsWith(arr: string[], str: string) {
-	console.log(arr, str);
 	for (let i = 0; i < arr.length; i++) {
 		if (str.startsWith(arr[i])) {
 			return true;

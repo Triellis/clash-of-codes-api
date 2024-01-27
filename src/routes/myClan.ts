@@ -27,6 +27,22 @@ export async function getClan(req: Request, res: Response) {
 					clan: clanName,
 				},
 			},
+			{
+				$project: {
+					_id: 0,
+					name: 1,
+					cfUsername: 1,
+					score: 1,
+					problemSolved: 1,
+					role: 1,
+				},
+			},
+			{
+				$sort: {
+					problemSolved: -1,
+					score: -1,
+				},
+			},
 		])
 		.toArray();
 	return res.json(clanData);

@@ -8,7 +8,6 @@ const router = Router();
 
 async function isAdmin(req: Request) {
 	const userData = await getSession(req);
-	console.log(userData);
 
 	return userData.role === "Admin";
 }
@@ -18,7 +17,6 @@ export async function validateAdmin(
 	res: Response,
 	next: NextFunction
 ) {
-	console.log(await isAdmin(req));
 	if (!(await isAdmin(req))) {
 		return res.send("Not an Admin").status(400);
 	}

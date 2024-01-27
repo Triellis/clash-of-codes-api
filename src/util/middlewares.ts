@@ -33,7 +33,6 @@ export async function auth(req: Request, res: Response, next: NextFunction) {
 	let restricted2 = structuredClone(restricted);
 	restricted2 = restricted2.filter((e) => e != "/login");
 	if (!includesOrStartsWith(restricted2, req.path)) {
-		console.log("not restricted");
 		next();
 		return;
 	}
