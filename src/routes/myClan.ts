@@ -10,6 +10,13 @@ import { getClanStandings } from "./clansRanks";
 
 export async function getClan(req: Request, res: Response) {
 	const clanName = req.params.clanName as Clan;
+	const query = req.query;
+	const page = Number(query.page) || 1;
+	const searchQuery = (query.searchQuery as string) || "";
+	const maxResults =
+		Number(query.maxResults) || Number(process.env.MAX_RESULTS);
+	const skip = (page - 1) * maxResults;
+
 	if (!clanName) {
 		return res.status(400).send("clan name not provided");
 	}
@@ -26,21 +33,13 @@ export async function getClan(req: Request, res: Response) {
 	const client = getClient();
 	const db = client.db("clash-of-codes");
 	const users = db.collection<UserCol>("Users");
-	const clansStanding = await getClanStandings();
-	const myClanRank = clansStanding.findIndex(
-		(clan) => clan.clanName === clanName
-	);
-	const myClanData = clansStanding.filter(
-		(clan) => clan.clanName === clanName
-	)[0];
-	const myClanScore = myClanData.totalScore;
-	const myClanProblemSolved = myClanData.totalProblemSolved;
 
 	const clanData = await users
 		.aggregate([
 			{
 				$match: {
 					clan: clanName,
+					name: { $regex: searchQuery, $options: "i" },
 				},
 			},
 			{
@@ -60,6 +59,8 @@ export async function getClan(req: Request, res: Response) {
 				},
 			},
 		])
+		.skip(skip)
+		.limit(maxResults)
 		.toArray();
 	const clanDataWithRank = clanData.map((user, index) => {
 		return {
@@ -67,12 +68,6 @@ export async function getClan(req: Request, res: Response) {
 			rank: index + 1,
 		};
 	}) as ClanMember[];
-	const clanDataWithRankAndClan: ClanDataWithRankAndClan = {
-		clanName,
-		clanRank: myClanRank + 1,
-		clanScore: myClanScore,
-		clanProblemSolved: myClanProblemSolved,
-		members: clanDataWithRank,
-	};
-	return res.json(clanDataWithRankAndClan);
+
+	return res.json(clanDataWithRank);
 }
