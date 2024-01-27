@@ -94,10 +94,3 @@ export type ClanMember = {
 	penalty: number;
 	role: Role;
 };
-export type ClanDataWithRankAndClan = {
-	clanName: Clan;
-	clanRank: number;
-	clanScore: number;
-	clanProblemSolved: number;
-	members: ClanMember[];
-};

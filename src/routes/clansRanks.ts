@@ -2,8 +2,6 @@ import { Request, Response } from "express";
 import { getClient } from "../util/db";
 import { UserCol } from "../util/types";
 
-export async function getClanStandings() {}
-
 export async function getClans(req: Request, res: Response) {
 	const client = getClient();
 	const db = client.db("clash-of-codes");

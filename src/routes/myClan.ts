@@ -1,12 +1,6 @@
 import { Request, Response } from "express";
 import { getClient } from "../util/db";
-import {
-	Clan,
-	ClanDataWithRankAndClan,
-	ClanMember,
-	UserCol,
-} from "../util/types";
-import { getClanStandings } from "./clansRanks";
+import { Clan, ClanMember, UserCol } from "../util/types";
 
 export async function getClan(req: Request, res: Response) {
 	const clanName = req.params.clanName as Clan;
@@ -43,6 +37,36 @@ export async function getClan(req: Request, res: Response) {
 				},
 			},
 			{
+				$addFields: {
+					effectiveScore: {
+						$add: [
+							"$score",
+							{ $multiply: ["$problemSolved", 1000] },
+						],
+					},
+				},
+			},
+			{
+				$sort: {
+					score: -1,
+					problemSolved: -1,
+				},
+			},
+			{
+				$setWindowFields: {
+					partitionBy: "$clan",
+					// short by score and problemSolved
+					sortBy: {
+						effectiveScore: -1,
+					},
+					output: {
+						rank: {
+							$denseRank: {},
+						},
+					},
+				},
+			},
+			{
 				$project: {
 					_id: 0,
 					name: 1,
@@ -50,12 +74,7 @@ export async function getClan(req: Request, res: Response) {
 					score: 1,
 					problemSolved: 1,
 					role: 1,
-				},
-			},
-			{
-				$sort: {
-					problemSolved: -1,
-					score: -1,
+					rank: "$rank",
 				},
 			},
 		])
@@ -65,7 +84,6 @@ export async function getClan(req: Request, res: Response) {
 	const clanDataWithRank = clanData.map((user, index) => {
 		return {
 			...user,
-			rank: index + 1,
 		};
 	}) as ClanMember[];
 
