@@ -1,6 +1,10 @@
 import { NextFunction } from "express";
 import { Request, Response } from "express";
-import { getCFSecretData, verifyServerToken } from "./functions";
+import {
+	getCFSecretData,
+	includesOrStartsWith,
+	verifyServerToken,
+} from "./functions";
 import cookie from "cookie";
 const envList = [
 	"GOOGLE_CLIENT_SECRET",
@@ -23,10 +27,13 @@ export function verifyEnv() {
 	}
 	getCFSecretData();
 }
+const restricted = ["/admin", "/login"];
 
 export async function auth(req: Request, res: Response, next: NextFunction) {
-	const byPassPaths = ["/login", "/PastScores", "/clans"];
-	if (byPassPaths.includes(req.path)) {
+	let restricted2 = structuredClone(restricted);
+	restricted2 = restricted2.filter((e) => e != "/login");
+	if (!includesOrStartsWith(restricted2, req.path)) {
+		console.log("not restricted");
 		next();
 		return;
 	}
@@ -47,9 +54,7 @@ export async function auth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function authToCookie(req: Request, res: Response, next: NextFunction) {
-	const byPassPaths = ["/PastScores", "/clans"];
-
-	if (byPassPaths.includes(req.path)) {
+	if (!includesOrStartsWith(restricted, req.path)) {
 		next();
 		return;
 	}
