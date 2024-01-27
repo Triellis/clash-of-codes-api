@@ -10,12 +10,13 @@ export interface ContestCol {
 	DateAdded: Date;
 	Live: boolean;
 }
+type Role = "User" | "Admin" | "Elder" | "Member" | "Leader" | "CoLeader";
 
 export type UserCol = {
 	_id?: ObjectId;
 	name: string;
 	email: string;
-	role: "User" | "Admin" | "Elder" | "Member" | "Leader" | "CoLeader";
+	role: Role;
 	clan: null | Clan;
 	visits: number;
 	createdAt: Date;
@@ -85,3 +86,18 @@ export type PastScoresCol = {
 	dateAdded: Date;
 	contestId: ObjectId;
 } & ProcessedRatingData;
+export type ClanMember = {
+	name: string;
+	cfUsername: string;
+	rank: number;
+	points: number;
+	penalty: number;
+	role: Role;
+};
+export type ClanDataWithRankAndClan = {
+	clanName: Clan;
+	clanRank: number;
+	clanScore: number;
+	clanProblemSolved: number;
+	members: ClanMember[];
+};
