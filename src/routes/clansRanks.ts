@@ -39,7 +39,7 @@ export async function getClans(req: Request, res: Response) {
 			rank: 0,
 		});
 	}
-
+	processedClanData.sort();
 	processedClanData.sort(
 		(a, b) => b.totalProblemSolved - a.totalProblemSolved
 	);
