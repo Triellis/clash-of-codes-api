@@ -39,10 +39,12 @@ export async function getClans(req: Request, res: Response) {
 			rank: 0,
 		});
 	}
-	processedClanData.sort();
-	processedClanData.sort(
-		(a, b) => b.totalProblemSolved - a.totalProblemSolved
-	);
+
+	processedClanData.sort((a, b) => {
+		if (a.totalScore === b.totalScore)
+			return b.totalProblemSolved - a.totalProblemSolved;
+		return b.totalScore - a.totalScore;
+	});
 	processedClanData.forEach((clan, index) => {
 		clan.rank = index + 1;
 	});
