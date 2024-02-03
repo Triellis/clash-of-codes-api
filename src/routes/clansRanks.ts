@@ -41,9 +41,9 @@ export async function getClans(req: Request, res: Response) {
 	}
 
 	processedClanData.sort((a, b) => {
-		if (a.totalScore === b.totalScore)
-			return b.totalProblemSolved - a.totalProblemSolved;
-		return b.totalScore - a.totalScore;
+		if (a.totalProblemSolved === b.totalProblemSolved)
+			return b.totalScore - a.totalScore;
+		return b.totalProblemSolved - a.totalProblemSolved;
 	});
 	processedClanData.forEach((clan, index) => {
 		clan.rank = index + 1;
