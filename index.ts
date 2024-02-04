@@ -80,7 +80,7 @@ client.on("open", async () => {
 
 	setInterval(async () => {
 		await syncLeaderboardFromCF();
-	}, 13000);
+	}, 3000);
 	server.listen(port, () => {
 		console.log(`clash-of-codes api @ http://localhost:${port}`);
 	});
