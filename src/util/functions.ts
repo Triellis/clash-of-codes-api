@@ -297,7 +297,36 @@ export async function syncData() {
 		redisClient.hSet("usernamesToClanNName", usernamesToClanNName);
 }
 
-async function getFinalData(cfData: CFAPIResponse[][]) {
+export async function syncLeaderboardFromCF() {
+	const redisClient = getRedisClient();
+	const oldLeaderboardHash = await redisClient.get("leaderboardHash");
+
+	const liveContestCodes = await redisClient.sMembers("liveContestCodes");
+
+	if (liveContestCodes.length == 0) {
+		if (oldLeaderboardHash == hash([])) return;
+		redisClient.set("leaderboardHash", hash([]));
+
+		redisClient.set("leaderboard", JSON.stringify([]));
+
+		await redisClient.publish("live", JSON.stringify([]));
+	}
+	const cfData: CFAPIResponse[][] = [];
+	const CFSecrets = await getCFSecretData();
+	const groupCode = CFSecrets.CF_GROUP_CODE;
+
+	for (let i = 0; i < liveContestCodes.length; i++) {
+		const contestCode = liveContestCodes[i];
+		const data = await getScoreFromCF(Number(contestCode), groupCode);
+		await sleep(1500);
+		// console.log(i);
+		if (data.length == 0) {
+			// console.log("skipped");
+			continue;
+		}
+		cfData.push(data);
+	}
+
 	const usernames = [];
 	for (let i = 0; i < cfData.length; i++) {
 		for (let j = 0; j < cfData[i].length; j++) {
@@ -305,9 +334,9 @@ async function getFinalData(cfData: CFAPIResponse[][]) {
 		}
 	}
 	if (usernames.length === 0) {
-		return [];
+		return;
 	}
-	const redisClient = getRedisClient();
+
 	const relatedData = await redisClient.hmGet(
 		"usernamesToClanNName",
 		usernames
@@ -339,113 +368,13 @@ async function getFinalData(cfData: CFAPIResponse[][]) {
 			return modifiedElem;
 		});
 	});
-	return finalCfData;
-}
-
-export function rearrangedCFDataEdgeCase(
-	leaderboardData: (CFAPIResponse & {
-		clan: Clan;
-		name: string | undefined;
-	})[][]
-) {
-	const YB1 = [
-		"Utsav Raithatha",
-		"Preet Patel",
-		"Vishv Boda",
-		"Saumil Patel",
-		"Vishwa Joshi",
-	];
-	const YB2 = [
-		"Shrey Shah",
-		"Varun Parikh",
-		"Sankalp Patel",
-		"Vedant Parikh",
-		"Vatsal Kayastha",
-	];
-	const rearrangedCFData: any = {
-		YB1: [],
-		YB2: [],
-	};
-	for (let i = 0; i < leaderboardData.length; i++) {
-		const leaderboard = leaderboardData[i];
-		for (let j = 0; j < leaderboard.length; j++) {
-			const user = leaderboard[j];
-			const clan = user.clan;
-			if (clan === "YB") {
-				if (includesOrStartsWith(YB1, user.name!)) {
-					rearrangedCFData.YB1.push(user);
-				} else if (includesOrStartsWith(YB2, user.name!)) {
-					rearrangedCFData.YB2.push(user);
-				}
-			}
-		}
-	}
-	// console.log(rearrangedCFData);
-	return [rearrangedCFData];
-}
-
-export async function syncLeaderboardFromCF() {
-	const redisClient = getRedisClient();
-	const oldLeaderboardHash = await redisClient.get("leaderboardHash");
-
-	const liveContestCodes = await redisClient.sMembers("liveContestCodes");
-
-	if (liveContestCodes.length == 0) {
-		if (oldLeaderboardHash == hash([])) return;
-		redisClient.set("leaderboardHash", hash([]));
-
-		redisClient.set("leaderboard", JSON.stringify([]));
-
-		await redisClient.publish("live", JSON.stringify([]));
-		console.log("no live contests");
-		return;
-	}
-	const cfData: CFAPIResponse[][] = [];
-	const CFSecrets = await getCFSecretData();
-	const groupCode = CFSecrets.CF_GROUP_CODE;
-	const edgeCaseContestCode = "502754";
-	if (
-		liveContestCodes.length == 1 &&
-		liveContestCodes[0] === edgeCaseContestCode
-	) {
-		const data = await getScoreFromCF(
-			Number(edgeCaseContestCode),
-			groupCode
-		);
-		const finalData = await getFinalData([data]);
-		const rearrangedCFData = rearrangedCFDataEdgeCase(finalData);
-		const newHash = hash(rearrangedCFData);
-		if (newHash === oldLeaderboardHash) {
-			return;
-		}
-
-		redisClient.set("leaderboardHash", newHash);
-		redisClient.set("leaderboard", JSON.stringify(rearrangedCFData));
-		await redisClient.publish("live", JSON.stringify(rearrangedCFData));
-		return;
-	}
-
-	for (let i = 0; i < liveContestCodes.length; i++) {
-		const contestCode = liveContestCodes[i];
-
-		const data = await getScoreFromCF(Number(contestCode), groupCode);
-
-		await sleep(1500);
-		// console.log(i);
-		if (data.length == 0) {
-			// console.log("skipped");
-			continue;
-		}
-		cfData.push(data);
-	}
-	const finalCfData = await getFinalData(cfData);
-
 	const rearrangedCFData = rearrangeLeaderboard(finalCfData);
 	const newHash = hash(rearrangedCFData);
 
 	if (newHash === oldLeaderboardHash) {
 		return;
 	}
+
 	redisClient.set("leaderboardHash", newHash);
 	redisClient.set("leaderboard", JSON.stringify(rearrangedCFData));
 
